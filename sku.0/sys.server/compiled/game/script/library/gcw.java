@@ -846,9 +846,15 @@ public class gcw extends script.base_script
         obj_id controller = getPub30StaticBaseControllerId(subject);
         setObjVar(controller, "gcw.static_base.last_capture", time);
     }
-    public static final int PHASE_5 = 259200;
+
+    //times in seconds
+    //48 hours
+    public static final int PHASE_5 = 172800;
+    //24 hours
     public static final int PHASE_4 = 86400;
-    public static final int PHASE_3 = 28800;
+    //12 hours
+    public static final int PHASE_3 = 43200;
+    //4 hours
     public static final int PHASE_2 = 14400;
     public static int getPub30StaticBaseCapturePhase(obj_id subject) throws InterruptedException
     {
@@ -857,20 +863,21 @@ public class gcw extends script.base_script
         {
             return 0;
         }
+        //getGameTime returns seconds
         int difference = getGameTime() - lastCapture;
-        if (difference >= 259200)
+        if (difference >= PHASE_5)
         {
             return 5;
         }
-        if (difference >= 86400)
+        if (difference >= PHASE_4)
         {
             return 4;
         }
-        if (difference >= 28800)
+        if (difference >= PHASE_3)
         {
             return 3;
         }
-        if (difference >= 14400)
+        if (difference >= PHASE_2)
         {
             return 2;
         }
