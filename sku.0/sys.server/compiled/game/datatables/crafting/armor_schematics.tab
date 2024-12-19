@@ -3585,3 +3585,6 @@ slot																resource	0	binding_and_reinforcement	petrochem_inert_polymer
 slot																resource	0	padding	hide_wooly	5
 slot																template	0	load_bearing_harness	object/tangible/component/clothing/synthetic_cloth.iff	1
 slot																template	0	reinforcement	object/tangible/component/clothing/reinforced_fiber_panels.iff	1
+clothing	armor_appearance_reverse_engineering_belt		systems.crafting.armor.crafting_armor_nostats	250	2	5	10	armor_crafting	1	object/tangible/wearables/armor/reverse_engineering/armor_reverse_engineering_belt.iff										
+slot																resource	0	shell	petrochem_inert	10
+slot																resource	0	hardware	metal	15

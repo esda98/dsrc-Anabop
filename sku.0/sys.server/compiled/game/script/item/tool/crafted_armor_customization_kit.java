@@ -105,6 +105,8 @@ public class crafted_armor_customization_kit extends script.base_script
                         continue;
                     } else if ((getTemplateName(invItem)).startsWith("object/tangible/wearables/armor/bounty_hunter/armor_bounty_hunter_belt")) {
                         continue;
+                    } else if ((getTemplateName(invItem)).startsWith("object/tangible/wearables/armor/reverse_engineering/armor_reverse_engineering_belt")) {
+                        continue;
                     }
                     items.addElement(invItem);
                 }

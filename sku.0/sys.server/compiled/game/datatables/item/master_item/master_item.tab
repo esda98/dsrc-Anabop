@@ -8569,3 +8569,4 @@ armor_infiltrator_boots_02	object/tangible/wearables/armor/infiltrator/armor_inf
 armor_infiltrator_belt_02	object/tangible/wearables/armor/infiltrator/armor_infiltrator_s02_belt.iff	armor		90				4							
 item_tauntaun_dna	object/tangible/loot/beast/dna_container.iff							4		systems.beast.cs_dna			DNA Storage Device (Tauntaun)	Device that stores harvested DNA cores.	
 item_mail_opt_in_4_reward	object/tangible/furniture/all/frn_all_statuette_kash_treecity.iff							4							
+item_reverse_engineering_belt_schematic	object/tangible/loot/loot_schematic/generic_limited_use.iff							1		item.loot_schematic.loot_schematic		1	Schematic: Reverse Engineering Belt	This limited use schematic will allow the user to create a Reverse Engineering Belt.	
