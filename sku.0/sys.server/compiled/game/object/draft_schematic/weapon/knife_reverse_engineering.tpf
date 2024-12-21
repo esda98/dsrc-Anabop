@@ -29,7 +29,7 @@ manufactureScripts = ["systems.crafting.weapon.crafting_melee_artisan_weapon"]
 
 @class object_template 8
 
-complexity = 8
+complexity = 2
 volume = 1
 sharedTemplate = "object/draft_schematic/weapon/shared_knife_reverse_engineering.iff"
 xpPoints = [[type = XP_crafting, level = 0, value = 0]]
