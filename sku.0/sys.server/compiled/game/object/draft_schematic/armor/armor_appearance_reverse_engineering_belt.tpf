@@ -29,7 +29,7 @@ manufactureScripts = ["systems.crafting.armor.crafting_armor_nostats"]
 
 @class object_template 8
 
-complexity = 5
+complexity = 2
 volume = 1
 objvars = +[]
 sharedTemplate = "object/draft_schematic/armor/shared_armor_appearance_reverse_engineering_belt.iff"

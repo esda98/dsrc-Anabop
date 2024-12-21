@@ -3,7 +3,7 @@
 @class draft_schematic_object_template 2
 
 attributes = [
-	[name = "crafting" "complexity", experiment = "" "", value = 5..5],
+	[name = "crafting" "complexity", experiment = "" "", value = 2..2],
 	[name = "crafting" "sockets", experiment = "" "", value = 0..0],
 	[name = "crafting" "xp", experiment = "" "", value = 10..10]]
 
