@@ -1,0 +1,19 @@
+// This file ws written @ 4:51:10 AM -  Sat Dec 21 2024
+
+@base object/weapon/melee/sword/base/shared_sword_base.iff
+
+@class weapon_object_template 4
+
+@class tangible_object_template 6
+
+@class object_template 5
+
+objectName = "weapon_name"  "knife_reverse_engineering"
+detailedDescription = "weapon_detail"  "knife_reverse_engineering"
+lookAtText = "weapon_lookat"  "knife_reverse_engineering"
+
+appearanceFilename = "appearance/wp_mle_knife_survival.apt"
+
+portalLayoutFilename = ""
+
+clientDataFile = "clientdata/weapon/client_melee_knife.cdf"
