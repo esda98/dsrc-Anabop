@@ -5,6 +5,7 @@ import script.library.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 
 public class group_ready_check extends script.base_script
 {
@@ -17,13 +18,7 @@ public class group_ready_check extends script.base_script
     public int readyCheck(obj_id self, obj_id target, String params, float defaultTime) throws InterruptedException
     {
         sendSystemMessage(self, "Entrance", "readyCheck");
-        //close the existing page if it is already open
-        if (sui.hasPid(self, "readyCheck"))
-        {
-            int pid = sui.getPid(self, "readyCheck");
-            forceCloseSUIPage(pid);
-            sui.removePid(self, "readyCheck");
-        }
+        closeReadyCheckStatusPage(self);
 
         //get the group members of self
         obj_id groupId = getGroupObject(self);
@@ -102,6 +97,16 @@ public class group_ready_check extends script.base_script
             }
         }
     }
+    public void closeReadyCheckStatusPage(obj_id host) throws InterruptedException
+    {
+        //close the existing page if it is already open
+        if (sui.hasPid(host, "readyCheck"))
+        {
+            int pid = sui.getPid(host, "readyCheck");
+            forceCloseSUIPage(pid);
+            sui.removePid(host, "readyCheck");
+        }
+    }
     //handler for the status page of the Ready Check being performed
     public int rescindReadyCheckRequest(obj_id self, dictionary params) throws InterruptedException
     {
@@ -155,16 +160,19 @@ public class group_ready_check extends script.base_script
         {
             memberPlayersReady[i][0] = getPlayerName(member);
             memberPlayersReady[i][1] = "\\#ff913dNo Response";
+            i++;
         }
         for (obj_id member : yes)
         {
             memberPlayersReady[i][0] = getPlayerName(member);
             memberPlayersReady[i][1] = "\\#3bcf00Ready";
+            i++;
         }
         for (obj_id member : no)
         {
             memberPlayersReady[i][0] = getPlayerName(member);
             memberPlayersReady[i][1] = "\\#eb1d0eNot Ready";
+            i++;
         }
 
         //establish constants of the window layout
@@ -179,6 +187,10 @@ public class group_ready_check extends script.base_script
             "text",
             "text"
         };
+
+        //sort the display list by the names of the toons
+        Arrays.sort(memberPlayersReady, (row1, row2) -> row1[0].compareToIgnoreCase(row2[0]));
+
         int pid = sui.tableRowMajor(host, host, sui.REFRESH_CANCEL, "Ready Check", "handleReadyCheckPageResponse", prompt, table_titles, table_types, memberPlayersReady, false);
         sui.setPid(host, pid, "readyCheck");
     }
@@ -281,27 +293,40 @@ public class group_ready_check extends script.base_script
     //response method to the messageTo invocation from members to leader informing the leader of their ready status
     public int readyCheckResponse(obj_id self, dictionary params) throws InterruptedException
     {
+        sendSystemMessage(self, "Received Ready Check Response", "readyCheck");
+
         //extract the responding object ID from the params dictionary
         obj_id respondingId = params.getObjId("responding_id");
         if (respondingId == null) {
             return SCRIPT_CONTINUE;
         }
 
+        sendSystemMessage(self, "Response has ID", "readyCheck");
+
         //get the list of people who have yet to respond to the ready check
         obj_id[] readyCheckResponsesNone = utils.getObjIdArrayObjVar(self, "readyCheck.responses.none");
         if (readyCheckResponsesNone == null) {
             return SCRIPT_CONTINUE;
         }
+
+        sendSystemMessage(self, "Util has none", "readyCheck");
+
         //get the list of people who have responded yes to ready check
         obj_id[] readyCheckResponsesYes = utils.getObjIdArrayObjVar(self, "readyCheck.responses.yes");
         if (readyCheckResponsesYes == null) {
             return SCRIPT_CONTINUE;
         }
+
+        sendSystemMessage(self, "Util has yes", "readyCheck");
+
+
         //get the list of people who have responded no to the ready check
         obj_id[] readyCheckResponsesNo = utils.getObjIdArrayObjVar(self, "readyCheck.responses.no");
         if (readyCheckResponsesNo == null) {
             return SCRIPT_CONTINUE;
         }
+
+        sendSystemMessage(self, "Util has no", "readyCheck");
 
         //ensure the responder is in the none section
         boolean fail = true;
@@ -327,6 +352,8 @@ public class group_ready_check extends script.base_script
             }
         }
 
+        sendSystemMessage(self, "ID in right lists", "readyCheck");
+
         //create the list of people who have not yet responded to the ready check as the previous list's set without the responder
         ArrayList<obj_id> newNoneResponses = new ArrayList<>();
         for (obj_id member : readyCheckResponsesNone) {
@@ -341,10 +368,12 @@ public class group_ready_check extends script.base_script
         boolean ready = params.getBoolean("ready");
         if (ready)
         {
+            sendSystemMessage(self, "Responder is ready", "readyCheck");
             newYesResponses.add(respondingId);
         }
         else
         {
+            sendSystemMessage(self, "Responder is not ready", "readyCheck");
             newNoResponses.add(respondingId);
         }
 
@@ -352,7 +381,11 @@ public class group_ready_check extends script.base_script
         utils.setObjVar(self, "readyCheck.responses.none", newNoneResponses.toArray(obj_id[]::new));
         utils.setObjVar(self, "readyCheck.responses.yes", newYesResponses.toArray(obj_id[]::new));
         utils.setObjVar(self, "readyCheck.responses.no", newNoResponses.toArray(obj_id[]::new));
+
+        closeReadyCheckStatusPage(self);
+
         reloadReadyCheckPage(self);
+
         return SCRIPT_CONTINUE;
     }
     //response method to the messageTo invocation from members to leader informing the leader of their ready status
