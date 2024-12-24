@@ -12,12 +12,12 @@ public class group_ready_check extends script.base_script
     public static final string_id SID_READY_CHECK_MUST_BE_GROUPED = new string_id("spam", "ready_check_must_be_grouped");
     public static final string_id SID_READY_CHECK_TWO_OR_MORE = new string_id("spam", "ready_check_two_or_more");
     public static final string_id SID_READY_CHECK_MUST_BE_GROUP_LEADER = new string_id("spam", "ready_check_must_be_group_leader");
+    public static final string_id SID_READY_CHECK_LEADER_START = new string_id("spam", "ready_check_leader_start");
     public group_ready_check()
     {
     }
     public int readyCheck(obj_id self, obj_id target, String params, float defaultTime) throws InterruptedException
     {
-        sendSystemMessage(self, "Entrance", "readyCheck");
         closeReadyCheckStatusPage(self);
 
         //get the group members of self
@@ -53,6 +53,11 @@ public class group_ready_check extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
+        //notify the members of the Ready Check initiation
+        for (obj_id member : groupMembers) {
+            sendSystemMessage(member, SID_READY_CHECK_LEADER_START);
+        }
+
         //send the readyCheck.request to the group members
         for (obj_id member : memberPlayerIds) {
             dictionary readyRequestParams = new dictionary();
@@ -62,8 +67,8 @@ public class group_ready_check extends script.base_script
 
         //set the readyCheck.responses
         obj_id[] none = memberPlayerIds.toArray(obj_id[]::new);
-        obj_id[] yes = new obj_id[] {};
-        obj_id[] no = new obj_id[] {};
+        obj_id[] yes = new obj_id[0];
+        obj_id[] no = new obj_id[0];
 
         setReadyCheckResponseObjVars(none, yes, no, self);
 
@@ -208,7 +213,7 @@ public class group_ready_check extends script.base_script
         switch (bp) {
             case sui.BP_CANCEL:
                 return SCRIPT_CONTINUE;
-            case sui.BP_REVERT:
+            case sui.BP_OK:
                 closeReadyCheckRequestPage(self);
                 reloadReadyCheckPage(self);
                 return SCRIPT_CONTINUE;
@@ -294,15 +299,11 @@ public class group_ready_check extends script.base_script
     //response method to the messageTo invocation from members to leader informing the leader of their ready status
     public int readyCheckResponse(obj_id self, dictionary params) throws InterruptedException
     {
-        sendSystemMessage(self, "Received Ready Check Response", "readyCheck");
-
         //extract the responding object ID from the params dictionary
         obj_id respondingId = params.getObjId("responding_id");
         if (respondingId == null) {
             return SCRIPT_CONTINUE;
         }
-
-        sendSystemMessage(self, "Response has ID", "readyCheck");
 
         //get the list of people who have yet to respond to the ready check
         obj_id[] readyCheckResponsesNone = utils.getObjIdArrayObjVar(self, "readyCheck.responses.none");
@@ -310,24 +311,17 @@ public class group_ready_check extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
-        sendSystemMessage(self, "Util has none", "readyCheck");
-
         //get the list of people who have responded yes to ready check
         obj_id[] readyCheckResponsesYes = utils.getObjIdArrayObjVar(self, "readyCheck.responses.yes");
         if (readyCheckResponsesYes == null) {
-            return SCRIPT_CONTINUE;
+            readyCheckResponsesYes = new obj_id[0];
         }
-
-        sendSystemMessage(self, "Util has yes", "readyCheck");
-
 
         //get the list of people who have responded no to the ready check
         obj_id[] readyCheckResponsesNo = utils.getObjIdArrayObjVar(self, "readyCheck.responses.no");
         if (readyCheckResponsesNo == null) {
-            return SCRIPT_CONTINUE;
+            readyCheckResponsesNo = new obj_id[0];
         }
-
-        sendSystemMessage(self, "Util has no", "readyCheck");
 
         //ensure the responder is in the none section
         boolean fail = true;
@@ -353,8 +347,6 @@ public class group_ready_check extends script.base_script
             }
         }
 
-        sendSystemMessage(self, "ID in right lists", "readyCheck");
-
         //create the list of people who have not yet responded to the ready check as the previous list's set without the responder
         ArrayList<obj_id> newNoneResponses = new ArrayList<>();
         for (obj_id member : readyCheckResponsesNone) {
@@ -367,14 +359,15 @@ public class group_ready_check extends script.base_script
         ArrayList<obj_id> newYesResponses = new ArrayList<>(Arrays.asList(readyCheckResponsesYes));
         ArrayList<obj_id> newNoResponses = new ArrayList<>(Arrays.asList(readyCheckResponsesNo));
         boolean ready = params.getBoolean("ready");
+        String notificationMessage = "";
         if (ready)
         {
-            sendSystemMessage(self, "Responder is ready", "readyCheck");
+            notificationMessage = getPlayerName(respondingId) + " is ready";
             newYesResponses.add(respondingId);
         }
         else
         {
-            sendSystemMessage(self, "Responder is not ready", "readyCheck");
+            notificationMessage = getPlayerName(respondingId) + " is not ready";
             newNoResponses.add(respondingId);
         }
 
@@ -383,8 +376,14 @@ public class group_ready_check extends script.base_script
         utils.setObjVar(self, "readyCheck.responses.yes", newYesResponses.toArray(obj_id[]::new));
         utils.setObjVar(self, "readyCheck.responses.no", newNoResponses.toArray(obj_id[]::new));
 
-        closeReadyCheckStatusPage(self);
+        //notify the group members of the ready check response
+        obj_id groupId = getGroupObject(self);
+        obj_id[] groupMembers = getGroupMemberIds(groupId);
+        for (obj_id member : groupMembers) {
+            sendSystemMessage(member, notificationMessage, "readyCheck");
+        }
 
+        closeReadyCheckStatusPage(self);
         reloadReadyCheckPage(self);
 
         return SCRIPT_CONTINUE;
@@ -395,17 +394,17 @@ public class group_ready_check extends script.base_script
         //get the list of people who have yet to respond to the ready check
         obj_id[] none = utils.getObjIdArrayObjVar(self, "readyCheck.responses.none");
         if (none == null) {
-            return;
+            none = new obj_id[0];
         }
         //get the list of people who have responded yes to ready check
         obj_id[] yes = utils.getObjIdArrayObjVar(self, "readyCheck.responses.yes");
         if (yes == null) {
-            return;
+            yes = new obj_id[0];
         }
         //get the list of people who have responded no to the ready check
         obj_id[] no = utils.getObjIdArrayObjVar(self, "readyCheck.responses.no");
         if (no == null) {
-            return;
+            no = new obj_id[0];
         }
 
         showReadyCheckStatusPage(none, yes, no, self);
