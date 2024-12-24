@@ -895,6 +895,7 @@ purchaseReinforcement		immediate	purchaseReinforcement				0		1	0	1	0	0	0	0	0	0	0
 purchaseTicket		immediate			purchaseTicket		0		1	1	1			0				0	0	0	0				0	0	0			0	0	1	0	1	0	0	0	0	1	1	1	1	0	1	0	0	0	0	0	0									0		0	0	0	0										none		1			0				0										
 qatool		immediate	cmdQaTool					admin																				1	1		0													1																														optional							40	csr											
 qatool		immediate	cmdQaTool					admin																				1	1		0	1												1																														optional							40	csr											
+readyCheck		normal	readyCheck				1		1	0	1	1	1	0	1	1	1	0	0	0	0	0	0	0	0	0	0			0	0	1	1		1	0	0	1	1	1	1	0	1	0	1	1	1	1	0	0									0		0	0	0	0									other	none		3			0														
 reconnectToTransferServer		immediate		failAdmin	reconnectToTransferServer			admin																				1	1		0	1												1																														none	0				0		40	csr	0										
 recruitSkillTrainer		normal	cmdRecruitSkillTrainer				0	recruitSkillTrainer	1	1	1	1	1	1	1	1	1	0	0	0	0	0	0	0	0	1	1	1	1	1	0	1	1	1	1	1	1	1	1	0	0	1	1	1	1	1	1	0	0	0											0	0	0	0										none		2			0				0										
 regeneration		normal	cmdRegeneration	cmdInnateFail			1	regeneration		0				0				0	0					0			0				0	1												0				0	0	0	0	0									0	0	0	0										optional		2			0				1			species_innate		1	3600				
