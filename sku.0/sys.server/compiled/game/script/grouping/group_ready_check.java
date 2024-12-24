@@ -16,6 +16,7 @@ public class group_ready_check extends script.base_script
     }
     public int readyCheck(obj_id self, obj_id target, String params, float defaultTime) throws InterruptedException
     {
+        sendSystemMessage(self, "Entrance", "readyCheck");
         //close the existing page if it is already open
         if (sui.hasPid(self, "readyCheck"))
         {
