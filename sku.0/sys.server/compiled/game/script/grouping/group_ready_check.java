@@ -209,6 +209,7 @@ public class group_ready_check extends script.base_script
             case sui.BP_CANCEL:
                 return SCRIPT_CONTINUE;
             case sui.BP_REVERT:
+                closeReadyCheckRequestPage(self);
                 reloadReadyCheckPage(self);
                 return SCRIPT_CONTINUE;
         }
@@ -281,12 +282,12 @@ public class group_ready_check extends script.base_script
         if (btn == sui.BP_CANCEL)
         {
             responseParams.put("ready", false);
-            messageTo(leaderId, "readyCheckResponse", params, 1.0f, false);
+            messageTo(leaderId, "readyCheckResponse", responseParams, 1.0f, false);
         }
         else
         {
             responseParams.put("ready", true);
-            messageTo(leaderId, "readyCheckResponse", params, 1.0f, false);
+            messageTo(leaderId, "readyCheckResponse", responseParams, 1.0f, false);
         }
         return SCRIPT_CONTINUE;
     }
