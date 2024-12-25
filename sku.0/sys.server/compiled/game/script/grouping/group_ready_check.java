@@ -316,6 +316,27 @@ public class group_ready_check extends script.base_script
         }
         return SCRIPT_CONTINUE;
     }
+    private obj_id[] getNoneResponseIds(obj_id self) {
+        obj_id[] readyCheckResponsesNone = utils.getObjIdArrayObjVar(self, "readyCheck.responses.none");
+        if (readyCheckResponsesNone == null) {
+            readyCheckResponsesNone = new obj_id[0];
+        }
+        return readyCheckResponsesNone;
+    }
+    private obj_id[] getYesResponseIds(obj_id self) {
+        obj_id[] readyCheckResponsesYes = utils.getObjIdArrayObjVar(self, "readyCheck.responses.yes");
+        if (readyCheckResponsesYes == null) {
+            readyCheckResponsesYes = new obj_id[0];
+        }
+        return readyCheckResponsesYes;
+    }
+    private obj_id[] getNoResponseIds(obj_id self) {
+        obj_id[] readyCheckResponsesNo = utils.getObjIdArrayObjVar(self, "readyCheck.responses.no");
+        if (readyCheckResponsesNo == null) {
+            readyCheckResponsesNo = new obj_id[0];
+        }
+        return readyCheckResponsesNo;
+    }
     //response method to the messageTo invocation from members to leader informing the leader of their ready status
     public int readyCheckResponse(obj_id self, dictionary params) throws InterruptedException
     {
@@ -325,23 +346,10 @@ public class group_ready_check extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
-        //get the list of people who have yet to respond to the ready check
-        obj_id[] readyCheckResponsesNone = utils.getObjIdArrayObjVar(self, "readyCheck.responses.none");
-        if (readyCheckResponsesNone == null) {
-            return SCRIPT_CONTINUE;
-        }
-
-        //get the list of people who have responded yes to ready check
-        obj_id[] readyCheckResponsesYes = utils.getObjIdArrayObjVar(self, "readyCheck.responses.yes");
-        if (readyCheckResponsesYes == null) {
-            readyCheckResponsesYes = new obj_id[0];
-        }
-
-        //get the list of people who have responded no to the ready check
-        obj_id[] readyCheckResponsesNo = utils.getObjIdArrayObjVar(self, "readyCheck.responses.no");
-        if (readyCheckResponsesNo == null) {
-            readyCheckResponsesNo = new obj_id[0];
-        }
+        //get the response lists
+        obj_id[] readyCheckResponsesNone = getNoneResponseIds(self);
+        obj_id[] readyCheckResponsesYes = getYesResponseIds(self);
+        obj_id[] readyCheckResponsesNo = getNoResponseIds(self);
 
         //create the list of people who have not yet responded to the ready check as the previous list's set without the responder
         //removes the responder from the list if they previously were in it
