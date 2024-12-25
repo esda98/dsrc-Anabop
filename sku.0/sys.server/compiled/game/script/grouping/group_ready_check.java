@@ -5,7 +5,6 @@ import script.library.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 
 public class group_ready_check extends script.base_script
 {
@@ -111,7 +110,7 @@ public class group_ready_check extends script.base_script
         obj_id[] yes = new obj_id[0];
         obj_id[] no = new obj_id[0];
 
-        setReadyCheckResponseObjVars(memberPlayerIds, yes, no, self);
+        setReadyCheckResponseScriptVars(memberPlayerIds, yes, no, self);
 
         //display the current status
         showReadyCheckStatusPage(memberPlayerIds, yes, no, self);
@@ -150,12 +149,13 @@ public class group_ready_check extends script.base_script
         obj_id[] memberPlayerIds = getGroupMemberPlayers(getGroupObject(self));
         for (obj_id member : memberPlayerIds) {
             sendSystemMessage(member, message, "readyCheck");
+            clearSnapshotScriptVars(member);
         }
         closeReadyCheckStatusPage(self);
         clearReadyCheckResponseObjVars(self);
         return SCRIPT_CONTINUE;
     }
-    public void cancelReadyCheck(obj_id host)
+    public void cancelReadyCheck(obj_id host) throws InterruptedException
     {
         //get the group of host
         obj_id groupId = getGroupObject(host);
@@ -233,19 +233,19 @@ public class group_ready_check extends script.base_script
         closeReadyCheckRequestPage(self);
         return SCRIPT_CONTINUE;
     }
-    public void clearReadyCheckResponseObjVars(obj_id host)
+    public void clearReadyCheckResponseObjVars(obj_id host) throws InterruptedException
     {
         obj_id[] none = new obj_id[] {};
         obj_id[] yes = new obj_id[] {};
         obj_id[] no = new obj_id[] {};
 
-        setReadyCheckResponseObjVars(none, yes, no, host);
+        setReadyCheckResponseScriptVars(none, yes, no, host);
     }
-    public void setReadyCheckResponseObjVars(obj_id[] none, obj_id[] yes, obj_id[] no, obj_id host)
+    public void setReadyCheckResponseScriptVars(obj_id[] none, obj_id[] yes, obj_id[] no, obj_id host) throws InterruptedException
     {
-        utils.setObjVar(host, "readyCheck.responses.none", none);
-        utils.setObjVar(host, "readyCheck.responses.yes", yes);
-        utils.setObjVar(host, "readyCheck.responses.no", no);
+        utils.setScriptVar(host, "readyCheck.responses.none", none);
+        utils.setScriptVar(host, "readyCheck.responses.yes", yes);
+        utils.setScriptVar(host, "readyCheck.responses.no", no);
     }
     public void snapshotReadyCheckResponseScriptVars(obj_id host, obj_id copyDestination) throws InterruptedException
     {
@@ -257,6 +257,13 @@ public class group_ready_check extends script.base_script
         utils.setScriptVar(copyDestination, "readyCheck.snapshot.yes", yes);
         utils.setScriptVar(copyDestination, "readyCheck.snapshot.no", no);
         utils.setScriptVar(copyDestination, "readyCheck.snapshot.time", getCalendarTime());
+    }
+    public void clearSnapshotScriptVars(obj_id host) throws InterruptedException
+    {
+        utils.setScriptVar(host, "readyCheck.snapshot.none",  new obj_id[] {});
+        utils.setScriptVar(host, "readyCheck.snapshot.yes",  new obj_id[] {});
+        utils.setScriptVar(host, "readyCheck.snapshot.no",  new obj_id[] {});
+        utils.setScriptVar(host, "readyCheck.snapshot.time", 0);
     }
     public void showReadyCheckStatusPage(obj_id[] none, obj_id[] yes, obj_id[] no, obj_id host) throws InterruptedException
     {
@@ -509,22 +516,22 @@ public class group_ready_check extends script.base_script
         }
         return SCRIPT_CONTINUE;
     }
-    private obj_id[] getNoneResponseIds(obj_id self) {
-        obj_id[] readyCheckResponsesNone = utils.getObjIdArrayObjVar(self, "readyCheck.responses.none");
+    private obj_id[] getNoneResponseIds(obj_id self) throws InterruptedException {
+        obj_id[] readyCheckResponsesNone = utils.getObjIdArrayScriptVar(self, "readyCheck.responses.none");
         if (readyCheckResponsesNone == null) {
             readyCheckResponsesNone = new obj_id[0];
         }
         return readyCheckResponsesNone;
     }
-    private obj_id[] getYesResponseIds(obj_id self) {
-        obj_id[] readyCheckResponsesYes = utils.getObjIdArrayObjVar(self, "readyCheck.responses.yes");
+    private obj_id[] getYesResponseIds(obj_id self) throws InterruptedException {
+        obj_id[] readyCheckResponsesYes = utils.getObjIdArrayScriptVar(self, "readyCheck.responses.yes");
         if (readyCheckResponsesYes == null) {
             readyCheckResponsesYes = new obj_id[0];
         }
         return readyCheckResponsesYes;
     }
-    private obj_id[] getNoResponseIds(obj_id self) {
-        obj_id[] readyCheckResponsesNo = utils.getObjIdArrayObjVar(self, "readyCheck.responses.no");
+    private obj_id[] getNoResponseIds(obj_id self) throws InterruptedException {
+        obj_id[] readyCheckResponsesNo = utils.getObjIdArrayScriptVar(self, "readyCheck.responses.no");
         if (readyCheckResponsesNo == null) {
             readyCheckResponsesNo = new obj_id[0];
         }
