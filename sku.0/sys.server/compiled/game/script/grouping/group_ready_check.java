@@ -43,6 +43,11 @@ public class group_ready_check extends script.base_script
             responseParams.put("responding_id", self);
             responseParams.put("ready", params.equals("yes") || params.equals("y"));
             messageTo(groupLeaderId, "readyCheckResponse", responseParams, 1.0f, false);
+            //try to auto refresh the snapshot page if it's open on the host
+            if (sui.hasPid(self, "readyCheck.snapshot"))
+            {
+                messageTo(self, "refreshSnapshot", new dictionary(), 3.0f, false);
+            }
             return SCRIPT_CONTINUE;
         }
 
@@ -77,6 +82,29 @@ public class group_ready_check extends script.base_script
         }
 
 
+        return SCRIPT_CONTINUE;
+    }
+    public int refreshSnapshot(obj_id self, dictionary params) throws InterruptedException
+    {
+        if (sui.hasPid(self, "readyCheck.snapshot"))
+        {
+            //get the group members of self
+            obj_id groupId = getGroupObject(self);
+            //if there is no group ID, give an error message to the user
+            if (groupId == null) {
+                sendSystemMessage(self, SID_READY_CHECK_MUST_BE_GROUPED);
+                return SCRIPT_CONTINUE;
+            }
+
+            //get the group leader
+            obj_id groupLeaderId = getGroupLeaderId(groupId);
+            if (groupLeaderId == null) {
+                return SCRIPT_CONTINUE;
+            }
+
+            snapshotReadyCheckResponseScriptVars(groupLeaderId, self);
+            showReadyCheckSnapshotPage(self);
+        }
         return SCRIPT_CONTINUE;
     }
     private obj_id[] getGroupMemberPlayers(obj_id groupId)
@@ -232,6 +260,7 @@ public class group_ready_check extends script.base_script
         }
 
         closeReadyCheckRequestPage(self);
+        closeReadyCheckSnapshotPage(self);
         return SCRIPT_CONTINUE;
     }
     public void clearReadyCheckResponseScriptVars(obj_id host) throws InterruptedException
