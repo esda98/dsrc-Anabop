@@ -150,6 +150,7 @@ public class group_ready_check extends script.base_script
         for (obj_id member : memberPlayerIds) {
             sendSystemMessage(member, message, "readyCheck");
             clearSnapshotScriptVars(member);
+            closeReadyCheckSnapshotPage(member);
         }
         closeReadyCheckStatusPage(self);
         clearReadyCheckResponseScriptVars(self);
