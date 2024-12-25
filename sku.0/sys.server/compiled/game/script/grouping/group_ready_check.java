@@ -472,22 +472,9 @@ public class group_ready_check extends script.base_script
     //response method to the messageTo invocation from members to leader informing the leader of their ready status
     public void reloadReadyCheckPage(obj_id self) throws InterruptedException
     {
-        //get the list of people who have yet to respond to the ready check
-        obj_id[] none = utils.getObjIdArrayObjVar(self, "readyCheck.responses.none");
-        if (none == null) {
-            none = new obj_id[0];
-        }
-        //get the list of people who have responded yes to ready check
-        obj_id[] yes = utils.getObjIdArrayObjVar(self, "readyCheck.responses.yes");
-        if (yes == null) {
-            yes = new obj_id[0];
-        }
-        //get the list of people who have responded no to the ready check
-        obj_id[] no = utils.getObjIdArrayObjVar(self, "readyCheck.responses.no");
-        if (no == null) {
-            no = new obj_id[0];
-        }
-
+        obj_id[] none = getNoneResponseIds(self);
+        obj_id[] yes = getYesResponseIds(self);
+        obj_id[] no = getNoResponseIds(self);
         showReadyCheckStatusPage(none, yes, no, self);
     }
 }
