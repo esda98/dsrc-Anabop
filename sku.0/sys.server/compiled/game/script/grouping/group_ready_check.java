@@ -49,7 +49,8 @@ public class group_ready_check extends script.base_script
 
         //make sure the group leader is performing the ready check
         if (groupLeaderId != self) {
-            sendSystemMessage(self, SID_READY_CHECK_MUST_BE_GROUP_LEADER);
+            snapshotReadyCheckResponseScriptVars(groupLeaderId, self);
+            showReadyCheckSnapshotPage(self);
             return SCRIPT_CONTINUE;
         }
 
@@ -153,6 +154,16 @@ public class group_ready_check extends script.base_script
             sui.removePid(host, "readyCheck");
         }
     }
+    public void closeReadyCheckSnapshotPage(obj_id host) throws InterruptedException
+    {
+        //close the existing page if it is already open
+        if (sui.hasPid(host, "readyCheck.snapshot"))
+        {
+            int pid = sui.getPid(host, "readyCheck.snapshot");
+            forceCloseSUIPage(pid);
+            sui.removePid(host, "readyCheck.snapshot");
+        }
+    }
     //handler for the status page of the Ready Check being performed
     public int rescindReadyCheckRequest(obj_id self, dictionary params) throws InterruptedException
     {
@@ -197,6 +208,17 @@ public class group_ready_check extends script.base_script
         utils.setObjVar(host, "readyCheck.responses.yes", yes);
         utils.setObjVar(host, "readyCheck.responses.no", no);
     }
+    public void snapshotReadyCheckResponseScriptVars(obj_id host, obj_id copyDestination) throws InterruptedException
+    {
+        obj_id[] none = getNoneResponseIds(host);
+        obj_id[] yes = getYesResponseIds(host);
+        obj_id[] no = getNoResponseIds(host);
+
+        utils.setScriptVar(copyDestination, "readyCheck.snapshot.none", none);
+        utils.setScriptVar(copyDestination, "readyCheck.snapshot.yes", yes);
+        utils.setScriptVar(copyDestination, "readyCheck.snapshot.no", no);
+        utils.setScriptVar(copyDestination, "readyCheck.snapshot.time", getCalendarTime());
+    }
     public void showReadyCheckStatusPage(obj_id[] none, obj_id[] yes, obj_id[] no, obj_id host) throws InterruptedException
     {
         if (none.length == 0 && yes.length == 0 && no.length == 0) {
@@ -206,6 +228,75 @@ public class group_ready_check extends script.base_script
             return;
         }
 
+        String[][] memberPlayersReady = buildReadyCheckTable(none, yes, no);
+
+        //establish constants of the window layout
+        String prompt = "@spam:ready_check_table_prompt";
+        String[] table_titles =
+        {
+            "@spam:table_title_player",
+            "@spam:table_title_status",
+        };
+        String[] table_types =
+        {
+            "text",
+            "text"
+        };
+
+        //sort the display list by the names of the toons
+        Arrays.sort(memberPlayersReady, (row1, row2) -> row1[0].compareToIgnoreCase(row2[0]));
+        closeReadyCheckStatusPage(host);
+        int pid = sui.tableRowMajor(host, host, sui.REFRESH_CANCEL, "Ready Check", "handleReadyCheckPageResponse", prompt, table_titles, table_types, memberPlayersReady, false);
+        sui.setPid(host, pid, "readyCheck");
+    }
+    public void showReadyCheckSnapshotPage(obj_id host) throws InterruptedException
+    {
+        obj_id[] none = utils.getObjIdArrayObjVar(host, "readyCheck.snapshot.none");
+        if (none == null) {
+            none = new obj_id[0];
+        }
+
+        obj_id[] yes = utils.getObjIdArrayObjVar(host, "readyCheck.snapshot.yes");
+        if (yes == null) {
+            yes = new obj_id[0];
+        }
+
+        obj_id[] no = utils.getObjIdArrayObjVar(host, "readyCheck.snapshot.no");
+        if (no == null) {
+            no = new obj_id[0];
+        }
+
+        if (none.length == 0 && yes.length == 0 && no.length == 0) {
+            closeReadyCheckNoSnapshotPage(host);
+            int pid = sui.msgbox(host, host, "@spam:ready_check_no_snapshot_prompt", sui.OK_ONLY, "@spam:ready_check_no_snapshot_title", sui.MSG_QUESTION, "onReadyCheckNoSnapshotResponse");
+            sui.setPid(host, pid, "readyCheck.noSnapshot");
+            return;
+        }
+
+        int snapshotTime = utils.getIntScriptVar(host, "readyCheck.snapshot.time");
+
+        String[][] memberPlayersReady = buildReadyCheckTable(none, yes, no);
+
+        //establish constants of the window layout
+        String prompt = "Ready Check as of " + getCalendarTimeStringLocal(snapshotTime);
+        String[] table_titles =
+                {
+                        "@spam:table_title_player",
+                        "@spam:table_title_status",
+                };
+        String[] table_types =
+                {
+                        "text",
+                        "text"
+                };
+
+        //sort the display list by the names of the toons
+        Arrays.sort(memberPlayersReady, (row1, row2) -> row1[0].compareToIgnoreCase(row2[0]));
+        closeReadyCheckSnapshotPage(host);
+        int pid = sui.tableRowMajor(host, host, sui.REFRESH_ONLY, "Ready Check Snapshot", "handleReadyCheckSnapshotPageResponse", prompt, table_titles, table_types, memberPlayersReady, false);
+        sui.setPid(host, pid, "readyCheck.snapshot");
+    }
+    private String[][] buildReadyCheckTable(obj_id[] none, obj_id[] yes, obj_id[] no) {
         //build the display table
         String[][] memberPlayersReady = new String[none.length + yes.length + no.length][2];
         int i = 0;
@@ -227,25 +318,7 @@ public class group_ready_check extends script.base_script
             memberPlayersReady[i][1] = "\\#eb1d0eNot Ready";
             i++;
         }
-
-        //establish constants of the window layout
-        String prompt = "@spam:ready_check_table_prompt";
-        String[] table_titles =
-        {
-            "@spam:table_title_player",
-            "@spam:table_title_status",
-        };
-        String[] table_types =
-        {
-            "text",
-            "text"
-        };
-
-        //sort the display list by the names of the toons
-        Arrays.sort(memberPlayersReady, (row1, row2) -> row1[0].compareToIgnoreCase(row2[0]));
-        closeReadyCheckStatusPage(host);
-        int pid = sui.tableRowMajor(host, host, sui.REFRESH_CANCEL, "Ready Check", "handleReadyCheckPageResponse", prompt, table_titles, table_types, memberPlayersReady, false);
-        sui.setPid(host, pid, "readyCheck");
+        return memberPlayersReady;
     }
     //response method to SUI MessageBox asking if the group leader would like to create a new ready check
     public int onReadyCheckCreateNewResponse(obj_id self, dictionary params) throws InterruptedException
@@ -255,6 +328,11 @@ public class group_ready_check extends script.base_script
         {
             createNewReadyCheck(self);
         }
+        return SCRIPT_CONTINUE;
+    }
+    //response method to SUI MessageBox informing a non-leader member there is no snapshot of a ready check to show
+    public int onReadyCheckNoSnapshotResponse(obj_id self, dictionary params) throws InterruptedException
+    {
         return SCRIPT_CONTINUE;
     }
     //handler for the status page of the Ready Check being performed
@@ -331,6 +409,16 @@ public class group_ready_check extends script.base_script
             int pid = sui.getPid(host, "readyCheck.createNew");
             forceCloseSUIPage(pid);
             sui.removePid(host, "readyCheck.createNew");
+        }
+    }
+    public void closeReadyCheckNoSnapshotPage(obj_id host) throws InterruptedException
+    {
+        //close the existing readyCheck.request if it is already open
+        if (sui.hasPid(host, "readyCheck.noSnapshot"))
+        {
+            int pid = sui.getPid(host, "readyCheck.noSnapshot");
+            forceCloseSUIPage(pid);
+            sui.removePid(host, "readyCheck.noSnapshot");
         }
     }
     //response method to SUI MessageBox asking if the group member is ready
