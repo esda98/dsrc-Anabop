@@ -18,8 +18,6 @@ public class group_ready_check extends script.base_script
     }
     public int readyCheck(obj_id self, obj_id target, String params, float defaultTime) throws InterruptedException
     {
-        closeReadyCheckStatusPage(self);
-
         //get the group members of self
         obj_id groupId = getGroupObject(self);
         //if there is no group ID, give an error message to the user
@@ -28,15 +26,37 @@ public class group_ready_check extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
-        //ensure the group leader is performing the ready check
+        //get the group leader
         obj_id groupLeaderId = getGroupLeaderId(groupId);
         if (groupLeaderId == null) {
             return SCRIPT_CONTINUE;
         }
+
+        //check if this is a ready check response command
+        if (!params.isEmpty()) {
+            dictionary responseParams = new dictionary();
+            responseParams.put("responding_id", self);
+            if (params.equals("yes")) {
+                //send yes to leader
+                responseParams.put("ready", true);
+            } else if (params.equals("no")) {
+                //send no to leader
+                responseParams.put("ready", false);
+            } else {
+                //Unknown parameter
+                return SCRIPT_CONTINUE;
+            }
+            messageTo(groupLeaderId, "readyCheckResponse", responseParams, 1.0f, false);
+            return SCRIPT_CONTINUE;
+        }
+
+        //make sure the group leader is performing the ready check
         if (groupLeaderId != self) {
             sendSystemMessage(self, SID_READY_CHECK_MUST_BE_GROUP_LEADER);
             return SCRIPT_CONTINUE;
         }
+
+        closeReadyCheckStatusPage(self);
 
         obj_id[] groupMembers = getGroupMemberIds(groupId);
         //determine the players in the group
@@ -323,31 +343,8 @@ public class group_ready_check extends script.base_script
             readyCheckResponsesNo = new obj_id[0];
         }
 
-        //ensure the responder is in the none section
-        boolean fail = true;
-        for (obj_id none : readyCheckResponsesNone) {
-            if (none == respondingId) {
-                fail = false;
-                break;
-            }
-        }
-        if (fail) {
-            return SCRIPT_CONTINUE;
-        }
-
-        //ensure the responder does not appear in the Yes or No section already
-        for (obj_id yes : readyCheckResponsesYes) {
-            if (yes == respondingId) {
-                return SCRIPT_CONTINUE;
-            }
-        }
-        for (obj_id no : readyCheckResponsesNo) {
-            if (no == respondingId) {
-                return SCRIPT_CONTINUE;
-            }
-        }
-
         //create the list of people who have not yet responded to the ready check as the previous list's set without the responder
+        //removes the responder from the list if they previously were in it
         ArrayList<obj_id> newNoneResponses = new ArrayList<>();
         for (obj_id member : readyCheckResponsesNone) {
             if (member != respondingId) {
@@ -355,9 +352,24 @@ public class group_ready_check extends script.base_script
             }
         }
 
-        //create the lists to save as the ready check responses for Yes and No as the lists from previous, ready to add the new one from this response
-        ArrayList<obj_id> newYesResponses = new ArrayList<>(Arrays.asList(readyCheckResponsesYes));
-        ArrayList<obj_id> newNoResponses = new ArrayList<>(Arrays.asList(readyCheckResponsesNo));
+        //create the yes list as the previous list's set without the responder
+        //removes the responder from the list if they previously were in it
+        ArrayList<obj_id> newYesResponses = new ArrayList<>();
+        for (obj_id member : readyCheckResponsesYes) {
+            if (member != respondingId) {
+                newYesResponses.add(member);
+            }
+        }
+
+        //create the yes list as the previous list's set without the responder
+        //removes the responder from the list if they previously were in it
+        ArrayList<obj_id> newNoResponses = new ArrayList<>();
+        for (obj_id member : readyCheckResponsesNo) {
+            if (member != respondingId) {
+                newNoResponses.add(member);
+            }
+        }
+
         boolean ready = params.getBoolean("ready");
         String notificationMessage = "";
         if (ready)
