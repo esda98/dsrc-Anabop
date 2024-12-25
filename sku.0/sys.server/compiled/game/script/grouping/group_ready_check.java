@@ -152,7 +152,7 @@ public class group_ready_check extends script.base_script
             clearSnapshotScriptVars(member);
         }
         closeReadyCheckStatusPage(self);
-        clearReadyCheckResponseObjVars(self);
+        clearReadyCheckResponseScriptVars(self);
         return SCRIPT_CONTINUE;
     }
     public void cancelReadyCheck(obj_id host) throws InterruptedException
@@ -172,7 +172,7 @@ public class group_ready_check extends script.base_script
             sendSystemMessage(host, SID_READY_CHECK_CANCEL_MUST_BE_LEADER);
             return;
         }
-        clearReadyCheckResponseObjVars(host);
+        clearReadyCheckResponseScriptVars(host);
         obj_id[] groupMembers = getGroupMemberIds(groupId);
         var rescindParams = new dictionary();
         rescindParams.put("leader_id", host);
@@ -233,7 +233,7 @@ public class group_ready_check extends script.base_script
         closeReadyCheckRequestPage(self);
         return SCRIPT_CONTINUE;
     }
-    public void clearReadyCheckResponseObjVars(obj_id host) throws InterruptedException
+    public void clearReadyCheckResponseScriptVars(obj_id host) throws InterruptedException
     {
         obj_id[] none = new obj_id[] {};
         obj_id[] yes = new obj_id[] {};
@@ -404,7 +404,7 @@ public class group_ready_check extends script.base_script
         //ensure there are some values in the params dictionary
         if (params == null || params.isEmpty())
         {
-            clearReadyCheckResponseObjVars(self);
+            clearReadyCheckResponseScriptVars(self);
             return SCRIPT_CONTINUE;
         }
 
@@ -604,10 +604,8 @@ public class group_ready_check extends script.base_script
             newNoResponses.add(respondingId);
         }
 
-        //save the objvar values
-        utils.setObjVar(self, "readyCheck.responses.none", newNoneResponses.toArray(obj_id[]::new));
-        utils.setObjVar(self, "readyCheck.responses.yes", newYesResponses.toArray(obj_id[]::new));
-        utils.setObjVar(self, "readyCheck.responses.no", newNoResponses.toArray(obj_id[]::new));
+        //save the scriptvar values
+        setReadyCheckResponseScriptVars(newNoneResponses.toArray(obj_id[]::new), newYesResponses.toArray(obj_id[]::new), newNoResponses.toArray(obj_id[]::new), self);
 
         //notify the group members of the ready check response
         obj_id groupId = getGroupObject(self);
