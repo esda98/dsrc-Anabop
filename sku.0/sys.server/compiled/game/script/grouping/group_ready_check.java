@@ -13,6 +13,9 @@ public class group_ready_check extends script.base_script
     public static final string_id SID_READY_CHECK_TWO_OR_MORE = new string_id("spam", "ready_check_two_or_more");
     public static final string_id SID_READY_CHECK_MUST_BE_GROUP_LEADER = new string_id("spam", "ready_check_must_be_group_leader");
     public static final string_id SID_READY_CHECK_LEADER_START = new string_id("spam", "ready_check_leader_start");
+    public static final string_id SID_READY_CHECK_CANCEL_MUST_BE_LEADER = new string_id("spam", "ready_check_cancel_must_be_leader");
+    public static final string_id SID_READY_CHECK_RESPONSE_NO_CHECK = new string_id("spam", "ready_check_response_no_check");
+    public static final string_id SID_READY_CHECK_CANCELLED = new string_id("spam", "ready_check_cancelled");
     public group_ready_check()
     {
     }
@@ -59,6 +62,8 @@ public class group_ready_check extends script.base_script
 
         if (params.equals("new")) {
             createNewReadyCheck(self);
+        } else if (params.equals("cancel")) {
+            cancelReadyCheck(self);
         } else {
             //get the response lists
             obj_id[] none = getNoneResponseIds(self);
@@ -122,9 +127,10 @@ public class group_ready_check extends script.base_script
             return;
         }
         if (groupLeaderId != host) {
+            sendSystemMessage(host, SID_READY_CHECK_CANCEL_MUST_BE_LEADER);
             return;
         }
-
+        clearReadyCheckResponseObjVars(host);
         obj_id[] groupMembers = getGroupMemberIds(groupId);
         var rescindParams = new dictionary();
         rescindParams.put("leader_id", host);
@@ -133,6 +139,7 @@ public class group_ready_check extends script.base_script
                 messageTo(member, "rescindReadyCheckRequest", rescindParams, 1.0f, false);
             }
         }
+        sendSystemMessage(host, SID_READY_CHECK_CANCELLED);
     }
     public void closeReadyCheckStatusPage(obj_id host) throws InterruptedException
     {
@@ -389,6 +396,11 @@ public class group_ready_check extends script.base_script
         obj_id[] readyCheckResponsesNone = getNoneResponseIds(self);
         obj_id[] readyCheckResponsesYes = getYesResponseIds(self);
         obj_id[] readyCheckResponsesNo = getNoResponseIds(self);
+
+        if (readyCheckResponsesNone.length == 0 && readyCheckResponsesYes.length == 0 && readyCheckResponsesNo.length == 0) {
+            sendSystemMessage(respondingId, SID_READY_CHECK_RESPONSE_NO_CHECK);
+            return SCRIPT_CONTINUE;
+        }
 
         //create the list of people who have not yet responded to the ready check as the previous list's set without the responder
         //removes the responder from the list if they previously were in it
