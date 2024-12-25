@@ -115,6 +115,45 @@ public class group_ready_check extends script.base_script
 
         //display the current status
         showReadyCheckStatusPage(memberPlayerIds, yes, no, self);
+
+        messageTo(self, "cleanupReadyCheck", new dictionary(), 60.0f, false);
+    }
+    //response to invoke messageTo for group members to be sent ready checks
+    public int cleanupReadyCheck(obj_id self, dictionary params) throws InterruptedException
+    {
+        //ensure the user is grouped when receiving a ready request
+        obj_id groupId = getGroupObject(self);
+        if (groupId == null) {
+            return SCRIPT_CONTINUE;
+        }
+
+        //ensure there is a group leader of self's group
+        obj_id selfGroupLeaderId = getGroupLeaderId(groupId);
+        if (selfGroupLeaderId == null) {
+            return SCRIPT_CONTINUE;
+        }
+
+        //ensure self's group leader is the same as self
+        if (selfGroupLeaderId != self) {
+            return SCRIPT_CONTINUE;
+        }
+
+        //send the summary message
+        obj_id[] none = getNoneResponseIds(self);
+        obj_id[] yes = getYesResponseIds(self);
+        obj_id[] no = getNoResponseIds(self);
+
+        if (none.length == 0 && yes.length == 0 && no.length == 0) {
+            return SCRIPT_CONTINUE;
+        }
+        String message = "Ready Check Results: " + yes.length + " Ready | " + no.length + " Not Ready | " + none.length + " No Response";
+        obj_id[] memberPlayerIds = getGroupMemberPlayers(getGroupObject(self));
+        for (obj_id member : memberPlayerIds) {
+            sendSystemMessage(member, message, "readyCheck");
+        }
+        closeReadyCheckStatusPage(self);
+        clearReadyCheckResponseObjVars(self);
+        return SCRIPT_CONTINUE;
     }
     public void cancelReadyCheck(obj_id host)
     {
@@ -251,17 +290,17 @@ public class group_ready_check extends script.base_script
     }
     public void showReadyCheckSnapshotPage(obj_id host) throws InterruptedException
     {
-        obj_id[] none = utils.getObjIdArrayObjVar(host, "readyCheck.snapshot.none");
+        obj_id[] none = utils.getObjIdArrayScriptVar(host, "readyCheck.snapshot.none");
         if (none == null) {
             none = new obj_id[0];
         }
 
-        obj_id[] yes = utils.getObjIdArrayObjVar(host, "readyCheck.snapshot.yes");
+        obj_id[] yes = utils.getObjIdArrayScriptVar(host, "readyCheck.snapshot.yes");
         if (yes == null) {
             yes = new obj_id[0];
         }
 
-        obj_id[] no = utils.getObjIdArrayObjVar(host, "readyCheck.snapshot.no");
+        obj_id[] no = utils.getObjIdArrayScriptVar(host, "readyCheck.snapshot.no");
         if (no == null) {
             no = new obj_id[0];
         }
@@ -295,6 +334,23 @@ public class group_ready_check extends script.base_script
         closeReadyCheckSnapshotPage(host);
         int pid = sui.tableRowMajor(host, host, sui.REFRESH_ONLY, "Ready Check Snapshot", "handleReadyCheckSnapshotPageResponse", prompt, table_titles, table_types, memberPlayersReady, false);
         sui.setPid(host, pid, "readyCheck.snapshot");
+    }
+    //response method to Ready Check Snapshot SUI table view
+    public int handleReadyCheckSnapshotPageResponse(obj_id self, dictionary params) throws InterruptedException
+    {
+        obj_id groupId = getGroupObject(self);
+        if (groupId == null) {
+            return SCRIPT_CONTINUE;
+        }
+        obj_id groupLeaderId = getGroupLeaderId(groupId);
+
+        int btn = sui.getIntButtonPressed(params);
+        if (btn == sui.BP_OK)
+        {
+            snapshotReadyCheckResponseScriptVars(groupLeaderId, self);
+            showReadyCheckSnapshotPage(self);
+        }
+        return SCRIPT_CONTINUE;
     }
     private String[][] buildReadyCheckTable(obj_id[] none, obj_id[] yes, obj_id[] no) {
         //build the display table
@@ -348,6 +404,7 @@ public class group_ready_check extends script.base_script
         int bp = sui.getIntButtonPressed(params);
         switch (bp) {
             case sui.BP_CANCEL:
+                cancelReadyCheck(self);
                 return SCRIPT_CONTINUE;
             case sui.BP_OK:
                 closeReadyCheckRequestPage(self);
