@@ -33,19 +33,11 @@ public class group_ready_check extends script.base_script
         }
 
         //check if this is a ready check response command
-        if (!params.isEmpty()) {
+        if ((params.equals("yes") || params.equals("y"))
+            || (params.equals("no") || params.equals("n"))) {
             dictionary responseParams = new dictionary();
             responseParams.put("responding_id", self);
-            if (params.equals("yes")) {
-                //send yes to leader
-                responseParams.put("ready", true);
-            } else if (params.equals("no")) {
-                //send no to leader
-                responseParams.put("ready", false);
-            } else {
-                //Unknown parameter
-                return SCRIPT_CONTINUE;
-            }
+            responseParams.put("ready", params.equals("yes") || params.equals("y"));
             messageTo(groupLeaderId, "readyCheckResponse", responseParams, 1.0f, false);
             return SCRIPT_CONTINUE;
         }
