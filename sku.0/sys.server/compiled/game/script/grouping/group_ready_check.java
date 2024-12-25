@@ -143,11 +143,27 @@ public class group_ready_check extends script.base_script
         //display the current status
         showReadyCheckStatusPage(memberPlayerIds, yes, no, self);
 
-        messageTo(self, "cleanupReadyCheck", new dictionary(), 60.0f, false);
+        //assign an id to this cleanup. if a cleanup attempt is processed and a different active cleanup ID is present, that cleanup can be discarded
+        int activeCleanupId = utils.getIntScriptVar(self, "activeCleanupId");
+        if (activeCleanupId > 0) {
+            activeCleanupId++;
+        } else {
+            activeCleanupId = 1;
+        }
+        utils.setScriptVar(self, "activeCleanupId", activeCleanupId);
+        dictionary cleanupParams = new dictionary();
+        cleanupParams.put("cleanup_id", activeCleanupId);
+        messageTo(self, "cleanupReadyCheck", cleanupParams, 60.0f, false);
     }
     //response to invoke messageTo for group members to be sent ready checks
     public int cleanupReadyCheck(obj_id self, dictionary params) throws InterruptedException
     {
+        //kick out this cleanup attempt if the active cleanup ID is not this request
+        int activeCleanupId = utils.getIntScriptVar(self, "activeCleanupId");
+        if (params.getInt("cleanup_id") != activeCleanupId) {
+            return SCRIPT_CONTINUE;
+        }
+
         //ensure the user is grouped when receiving a ready request
         obj_id groupId = getGroupObject(self);
         if (groupId == null) {
