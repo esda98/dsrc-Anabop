@@ -16,6 +16,8 @@ public class group_ready_check extends script.base_script
     public static final string_id SID_READY_CHECK_CANCEL_MUST_BE_LEADER = new string_id("spam", "ready_check_cancel_must_be_leader");
     public static final string_id SID_READY_CHECK_RESPONSE_NO_CHECK = new string_id("spam", "ready_check_response_no_check");
     public static final string_id SID_READY_CHECK_CANCELLED = new string_id("spam", "ready_check_cancelled");
+    public static final string_id SID_READY_CHECK_DUPLICATE_YES = new string_id("spam", "ready_check_duplicate_yes");
+    public static final string_id SID_READY_CHECK_DUPLICATE_NO = new string_id("spam", "ready_check_duplicate_no");
     public group_ready_check()
     {
     }
@@ -411,12 +413,17 @@ public class group_ready_check extends script.base_script
             }
         }
 
+        boolean ready = params.getBoolean("ready");
         //create the yes list as the previous list's set without the responder
         //removes the responder from the list if they previously were in it
         ArrayList<obj_id> newYesResponses = new ArrayList<>();
         for (obj_id member : readyCheckResponsesYes) {
             if (member != respondingId) {
                 newYesResponses.add(member);
+            } else if (ready) {
+                //if user already in yes list and responding ready, inform the responder they are already set as ready
+                sendSystemMessage(respondingId, SID_READY_CHECK_DUPLICATE_YES);
+                return SCRIPT_CONTINUE;
             }
         }
 
@@ -426,10 +433,13 @@ public class group_ready_check extends script.base_script
         for (obj_id member : readyCheckResponsesNo) {
             if (member != respondingId) {
                 newNoResponses.add(member);
+            } else if (!ready) {
+                //if user already in no list and responding ready, inform the responder they are already set as not ready
+                sendSystemMessage(respondingId, SID_READY_CHECK_DUPLICATE_NO);
+                return SCRIPT_CONTINUE;
             }
         }
 
-        boolean ready = params.getBoolean("ready");
         String notificationMessage = "";
         if (ready)
         {
