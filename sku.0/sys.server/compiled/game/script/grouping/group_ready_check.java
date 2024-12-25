@@ -50,6 +50,30 @@ public class group_ready_check extends script.base_script
 
         closeReadyCheckStatusPage(self);
 
+        //ensure there are at least two players in the group to perform the ready check
+        obj_id[] memberPlayerIds = getGroupMemberPlayers(groupId);
+        if (memberPlayerIds.length < 2) {
+            sendSystemMessage(self, SID_READY_CHECK_TWO_OR_MORE);
+            return SCRIPT_CONTINUE;
+        }
+
+        if (params.equals("new")) {
+            createNewReadyCheck(self);
+        } else {
+            //get the response lists
+            obj_id[] none = getNoneResponseIds(self);
+            obj_id[] yes = getYesResponseIds(self);
+            obj_id[] no = getNoResponseIds(self);
+
+            //display the current status
+            showReadyCheckStatusPage(none, yes, no, self);
+        }
+
+
+        return SCRIPT_CONTINUE;
+    }
+    private obj_id[] getGroupMemberPlayers(obj_id groupId)
+    {
         obj_id[] groupMembers = getGroupMemberIds(groupId);
         //determine the players in the group
         ArrayList<obj_id> memberPlayerIds = new ArrayList<obj_id>();
@@ -58,35 +82,31 @@ public class group_ready_check extends script.base_script
                 memberPlayerIds.add(member);
             }
         }
-
-        //ensure there are at least two players in the group to perform the ready check
-        if (memberPlayerIds.size() < 2) {
-            sendSystemMessage(self, SID_READY_CHECK_TWO_OR_MORE);
-            return SCRIPT_CONTINUE;
-        }
-
-        //notify the members of the Ready Check initiation
-        for (obj_id member : groupMembers) {
-            sendSystemMessage(member, SID_READY_CHECK_LEADER_START);
-        }
-
+        return memberPlayerIds.toArray(obj_id[]::new);
+    }
+    public void createNewReadyCheck(obj_id self) throws InterruptedException
+    {
         //send the readyCheck.request to the group members
+        obj_id[] memberPlayerIds = getGroupMemberPlayers(getGroupObject(self));
+        if (memberPlayerIds.length < 2) {
+            sendSystemMessage(self, SID_READY_CHECK_TWO_OR_MORE);
+            return;
+        }
         for (obj_id member : memberPlayerIds) {
+            sendSystemMessage(member, SID_READY_CHECK_LEADER_START);
             dictionary readyRequestParams = new dictionary();
             readyRequestParams.put("leader_id", self);
             messageTo(member, "receiveReadyRequest", readyRequestParams, 1.0f, false);
         }
 
         //set the readyCheck.responses
-        obj_id[] none = memberPlayerIds.toArray(obj_id[]::new);
         obj_id[] yes = new obj_id[0];
         obj_id[] no = new obj_id[0];
 
-        setReadyCheckResponseObjVars(none, yes, no, self);
+        setReadyCheckResponseObjVars(memberPlayerIds, yes, no, self);
 
         //display the current status
-        showReadyCheckStatusPage(none, yes, no, self);
-        return SCRIPT_CONTINUE;
+        showReadyCheckStatusPage(memberPlayerIds, yes, no, self);
     }
     public void cancelReadyCheck(obj_id host)
     {
@@ -170,6 +190,13 @@ public class group_ready_check extends script.base_script
     }
     public void showReadyCheckStatusPage(obj_id[] none, obj_id[] yes, obj_id[] no, obj_id host) throws InterruptedException
     {
+        if (none.length == 0 && yes.length == 0 && no.length == 0) {
+            closeReadyCheckCreateNewPage(host);
+            int pid = sui.msgbox(host, host, "@spam:ready_check_create_new_prompt", sui.YES_NO, "@spam:ready_check_create_new_title", sui.MSG_QUESTION, "onReadyCheckCreateNewResponse");
+            sui.setPid(host, pid, "readyCheck.createNew");
+            return;
+        }
+
         //build the display table
         String[][] memberPlayersReady = new String[none.length + yes.length + no.length][2];
         int i = 0;
@@ -207,9 +234,19 @@ public class group_ready_check extends script.base_script
 
         //sort the display list by the names of the toons
         Arrays.sort(memberPlayersReady, (row1, row2) -> row1[0].compareToIgnoreCase(row2[0]));
-
+        closeReadyCheckStatusPage(host);
         int pid = sui.tableRowMajor(host, host, sui.REFRESH_CANCEL, "Ready Check", "handleReadyCheckPageResponse", prompt, table_titles, table_types, memberPlayersReady, false);
         sui.setPid(host, pid, "readyCheck");
+    }
+    //response method to SUI MessageBox asking if the group leader would like to create a new ready check
+    public int onReadyCheckCreateNewResponse(obj_id self, dictionary params) throws InterruptedException
+    {
+        int btn = sui.getIntButtonPressed(params);
+        if (btn == sui.BP_OK)
+        {
+            createNewReadyCheck(self);
+        }
+        return SCRIPT_CONTINUE;
     }
     //handler for the status page of the Ready Check being performed
     public int handleReadyCheckPageResponse(obj_id self, dictionary params) throws InterruptedException
@@ -275,6 +312,16 @@ public class group_ready_check extends script.base_script
             int pid = sui.getPid(host, "readyCheck.request");
             forceCloseSUIPage(pid);
             sui.removePid(host, "readyCheck.request");
+        }
+    }
+    public void closeReadyCheckCreateNewPage(obj_id host) throws InterruptedException
+    {
+        //close the existing readyCheck.request if it is already open
+        if (sui.hasPid(host, "readyCheck.createNew"))
+        {
+            int pid = sui.getPid(host, "readyCheck.createNew");
+            forceCloseSUIPage(pid);
+            sui.removePid(host, "readyCheck.createNew");
         }
     }
     //response method to SUI MessageBox asking if the group member is ready
