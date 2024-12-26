@@ -577,21 +577,21 @@ public class group_ready_check extends script.base_script
         return SCRIPT_CONTINUE;
     }
     private obj_id[] getNoneResponseIds(obj_id self) throws InterruptedException {
-        obj_id[] readyCheckResponsesNone = utils.getObjIdArrayScriptVar(self, "readyCheck.responses.none");
+        obj_id[] readyCheckResponsesNone = utils.getObjIdArrayScriptVar(getGroupObject(self), "readyCheck.responses.none");
         if (readyCheckResponsesNone == null) {
             readyCheckResponsesNone = new obj_id[0];
         }
         return readyCheckResponsesNone;
     }
     private obj_id[] getYesResponseIds(obj_id self) throws InterruptedException {
-        obj_id[] readyCheckResponsesYes = utils.getObjIdArrayScriptVar(self, "readyCheck.responses.yes");
+        obj_id[] readyCheckResponsesYes = utils.getObjIdArrayScriptVar(getGroupObject(self), "readyCheck.responses.yes");
         if (readyCheckResponsesYes == null) {
             readyCheckResponsesYes = new obj_id[0];
         }
         return readyCheckResponsesYes;
     }
     private obj_id[] getNoResponseIds(obj_id self) throws InterruptedException {
-        obj_id[] readyCheckResponsesNo = utils.getObjIdArrayScriptVar(self, "readyCheck.responses.no");
+        obj_id[] readyCheckResponsesNo = utils.getObjIdArrayScriptVar(getGroupObject(self), "readyCheck.responses.no");
         if (readyCheckResponsesNo == null) {
             readyCheckResponsesNo = new obj_id[0];
         }
