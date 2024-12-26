@@ -10,13 +10,12 @@ public class group_ready_check extends script.base_script
 {
     public static final string_id SID_READY_CHECK_MUST_BE_GROUPED = new string_id("spam", "ready_check_must_be_grouped");
     public static final string_id SID_READY_CHECK_TWO_OR_MORE = new string_id("spam", "ready_check_two_or_more");
-    public static final string_id SID_READY_CHECK_MUST_BE_GROUP_LEADER = new string_id("spam", "ready_check_must_be_group_leader");
-    public static final string_id SID_READY_CHECK_LEADER_START = new string_id("spam", "ready_check_leader_start");
-    public static final string_id SID_READY_CHECK_CANCEL_MUST_BE_LEADER = new string_id("spam", "ready_check_cancel_must_be_leader");
+    public static final string_id SID_READY_CHECK_START = new string_id("spam", "ready_check_start");
     public static final string_id SID_READY_CHECK_RESPONSE_NO_CHECK = new string_id("spam", "ready_check_response_no_check");
     public static final string_id SID_READY_CHECK_CANCELLED = new string_id("spam", "ready_check_cancelled");
     public static final string_id SID_READY_CHECK_DUPLICATE_YES = new string_id("spam", "ready_check_duplicate_yes");
     public static final string_id SID_READY_CHECK_DUPLICATE_NO = new string_id("spam", "ready_check_duplicate_no");
+    public static final string_id SID_READY_CHECK_MUST_BE_LEADER = new string_id("spam", "ready_check_must_be_leader");
     public group_ready_check()
     {
     }
@@ -30,19 +29,22 @@ public class group_ready_check extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
-        //get the group leader
-        obj_id groupLeaderId = getGroupLeaderId(groupId);
-        if (groupLeaderId == null) {
-            return SCRIPT_CONTINUE;
-        }
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
 
         //check if this is a ready check response command
         if ((params.equals("yes") || params.equals("y"))
             || (params.equals("no") || params.equals("n"))) {
+
+            //if there is no active ready check, inform the command performer that there is no ready check to respond to
+            if (readyCheckPerformer == null) {
+                sendSystemMessage(self, SID_READY_CHECK_RESPONSE_NO_CHECK);
+                return SCRIPT_CONTINUE;
+            }
+
             dictionary responseParams = new dictionary();
             responseParams.put("responding_id", self);
             responseParams.put("ready", params.equals("yes") || params.equals("y"));
-            messageTo(groupLeaderId, "readyCheckResponse", responseParams, 1.0f, false);
+            messageTo(readyCheckPerformer, "readyCheckResponse", responseParams, 1.0f, false);
             //try to auto refresh the snapshot page if it's open on the host
             if (sui.hasPid(self, "readyCheck.snapshot"))
             {
@@ -51,9 +53,8 @@ public class group_ready_check extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
-        //make sure the group leader is performing the ready check
-        if (groupLeaderId != self) {
-            snapshotReadyCheckResponseScriptVars(groupLeaderId, self);
+        //see if this is the active performer of a ready check
+        if (readyCheckPerformer != self) {
             showReadyCheckSnapshotPage(self);
             return SCRIPT_CONTINUE;
         }
@@ -96,13 +97,11 @@ public class group_ready_check extends script.base_script
                 return SCRIPT_CONTINUE;
             }
 
-            //get the group leader
-            obj_id groupLeaderId = getGroupLeaderId(groupId);
-            if (groupLeaderId == null) {
+            obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+            if (readyCheckPerformer == null) {
                 return SCRIPT_CONTINUE;
             }
 
-            snapshotReadyCheckResponseScriptVars(groupLeaderId, self);
             showReadyCheckSnapshotPage(self);
         }
         return SCRIPT_CONTINUE;
@@ -121,6 +120,13 @@ public class group_ready_check extends script.base_script
     }
     public void createNewReadyCheck(obj_id self) throws InterruptedException
     {
+        //Keep Non-Group Leaders from Creating a new Ready Check: Remove to enable non-leaders to create ready checks
+        obj_id leaderId = getGroupLeaderId(getGroupObject(self));
+        if (leaderId != self) {
+            sendSystemMessage(self, SID_READY_CHECK_MUST_BE_LEADER);
+            return;
+        }
+
         //send the readyCheck.request to the group members
         obj_id[] memberPlayerIds = getGroupMemberPlayers(getGroupObject(self));
         if (memberPlayerIds.length < 2) {
@@ -128,9 +134,9 @@ public class group_ready_check extends script.base_script
             return;
         }
         for (obj_id member : memberPlayerIds) {
-            sendSystemMessage(member, SID_READY_CHECK_LEADER_START);
+            sendSystemMessage(member, SID_READY_CHECK_START);
             dictionary readyRequestParams = new dictionary();
-            readyRequestParams.put("leader_id", self);
+            readyRequestParams.put("performer_id", self);
             messageTo(member, "receiveReadyRequest", readyRequestParams, 1.0f, false);
         }
 
@@ -170,14 +176,14 @@ public class group_ready_check extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
-        //ensure there is a group leader of self's group
-        obj_id selfGroupLeaderId = getGroupLeaderId(groupId);
-        if (selfGroupLeaderId == null) {
+        //ensure there is a ready check performer on the group
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        if (readyCheckPerformer == null) {
             return SCRIPT_CONTINUE;
         }
 
-        //ensure self's group leader is the same as self
-        if (selfGroupLeaderId != self) {
+        //ensure ready check performer is self
+        if (readyCheckPerformer != self) {
             return SCRIPT_CONTINUE;
         }
 
@@ -193,7 +199,6 @@ public class group_ready_check extends script.base_script
         obj_id[] memberPlayerIds = getGroupMemberPlayers(getGroupObject(self));
         for (obj_id member : memberPlayerIds) {
             sendSystemMessage(member, message, "readyCheck");
-            clearSnapshotScriptVars(member);
             closeReadyCheckSnapshotPage(member);
         }
         closeReadyCheckStatusPage(self);
@@ -208,19 +213,22 @@ public class group_ready_check extends script.base_script
             return;
         }
 
-        //ensure the group leader is performing the ready check cancellation
-        obj_id groupLeaderId = getGroupLeaderId(groupId);
-        if (groupLeaderId == null) {
+        //ensure the ready check performer is performing the ready check cancellation
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        if (readyCheckPerformer == null) {
+            sendSystemMessage(host, SID_READY_CHECK_RESPONSE_NO_CHECK);
             return;
         }
-        if (groupLeaderId != host) {
-            sendSystemMessage(host, SID_READY_CHECK_CANCEL_MUST_BE_LEADER);
+
+        //ensure the ready check performer is performing the cancellation
+        if (readyCheckPerformer != host) {
             return;
         }
+
         clearReadyCheckResponseScriptVars(host);
         obj_id[] groupMembers = getGroupMemberIds(groupId);
         var rescindParams = new dictionary();
-        rescindParams.put("leader_id", host);
+        rescindParams.put("performer_id", host);
         for (obj_id member : groupMembers) {
             if (isPlayer(member)) {
                 messageTo(member, "rescindReadyCheckRequest", rescindParams, 1.0f, false);
@@ -248,12 +256,12 @@ public class group_ready_check extends script.base_script
             sui.removePid(host, "readyCheck.snapshot");
         }
     }
-    //handler for the status page of the Ready Check being performed
+    //handler for performer to invoke on members to cancel ready check operations on their client
     public int rescindReadyCheckRequest(obj_id self, dictionary params) throws InterruptedException
     {
-        //get the leader of the group cancelling the ready request
-        obj_id leaderId = params.getObjId("leader_id");
-        if (leaderId == null)
+        //get the performer of the ready check cancellation
+        obj_id performerId = params.getObjId("performer_id");
+        if (performerId == null)
         {
             return SCRIPT_CONTINUE;
         }
@@ -264,14 +272,14 @@ public class group_ready_check extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
-        //ensure there is a group leader of self's group
-        obj_id selfGroupLeaderId = getGroupLeaderId(groupId);
-        if (selfGroupLeaderId == null) {
+        //ensure the performer of the active ready check has issued the cancellation request
+        obj_id groupReadyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        if (groupReadyCheckPerformer == null) {
             return SCRIPT_CONTINUE;
         }
 
-        //ensure self's group leader is the same as the group leader requesting the ready check
-        if (selfGroupLeaderId != leaderId) {
+        //ensure the ready check performer is performing the cancellation
+        if (groupReadyCheckPerformer != performerId) {
             return SCRIPT_CONTINUE;
         }
 
@@ -289,31 +297,26 @@ public class group_ready_check extends script.base_script
     }
     public void setReadyCheckResponseScriptVars(obj_id[] none, obj_id[] yes, obj_id[] no, obj_id host) throws InterruptedException
     {
-        utils.setScriptVar(host, "readyCheck.responses.none", none);
-        utils.setScriptVar(host, "readyCheck.responses.yes", yes);
-        utils.setScriptVar(host, "readyCheck.responses.no", no);
-    }
-    public void snapshotReadyCheckResponseScriptVars(obj_id host, obj_id copyDestination) throws InterruptedException
-    {
-        obj_id[] none = getNoneResponseIds(host);
-        obj_id[] yes = getYesResponseIds(host);
-        obj_id[] no = getNoResponseIds(host);
+        obj_id groupId = getGroupObject(host);
+        if (groupId == null) {
+            return;
+        }
 
-        utils.setScriptVar(copyDestination, "readyCheck.snapshot.none", none);
-        utils.setScriptVar(copyDestination, "readyCheck.snapshot.yes", yes);
-        utils.setScriptVar(copyDestination, "readyCheck.snapshot.no", no);
-        utils.setScriptVar(copyDestination, "readyCheck.snapshot.time", getCalendarTime());
-    }
-    public void clearSnapshotScriptVars(obj_id host) throws InterruptedException
-    {
-        utils.setScriptVar(host, "readyCheck.snapshot.none",  new obj_id[] {});
-        utils.setScriptVar(host, "readyCheck.snapshot.yes",  new obj_id[] {});
-        utils.setScriptVar(host, "readyCheck.snapshot.no",  new obj_id[] {});
-        utils.setScriptVar(host, "readyCheck.snapshot.time", 0);
+        utils.setScriptVar(groupId, "readyCheck.responses.none", none);
+        utils.setScriptVar(groupId, "readyCheck.responses.yes", yes);
+        utils.setScriptVar(groupId, "readyCheck.responses.no", no);
+        utils.setScriptVar(groupId, "readyCheckPerformer", host);
     }
     public void showReadyCheckStatusPage(obj_id[] none, obj_id[] yes, obj_id[] no, obj_id host) throws InterruptedException
     {
         if (none.length == 0 && yes.length == 0 && no.length == 0) {
+            //Keep Non-Group Leaders from Creating a new Ready Check: Remove to enable non-leaders to create ready checks
+            obj_id leaderId = getGroupLeaderId(getGroupObject(host));
+            if (leaderId != host) {
+                sendSystemMessage(host, SID_READY_CHECK_MUST_BE_LEADER);
+                return;
+            }
+
             closeReadyCheckCreateNewPage(host);
             int pid = sui.msgbox(host, host, "@spam:ready_check_create_new_prompt", sui.YES_NO, "@spam:ready_check_create_new_title", sui.MSG_QUESTION, "onReadyCheckCreateNewResponse");
             sui.setPid(host, pid, "readyCheck.createNew");
@@ -343,17 +346,28 @@ public class group_ready_check extends script.base_script
     }
     public void showReadyCheckSnapshotPage(obj_id host) throws InterruptedException
     {
-        obj_id[] none = utils.getObjIdArrayScriptVar(host, "readyCheck.snapshot.none");
+        obj_id groupId = getGroupObject(host);
+        if (groupId == null) {
+            return;
+        }
+
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        if (readyCheckPerformer == null) {
+            sendSystemMessage(host, SID_READY_CHECK_RESPONSE_NO_CHECK);
+            return;
+        }
+
+        obj_id[] none = utils.getObjIdArrayScriptVar(groupId, "readyCheck.responses.none");
         if (none == null) {
             none = new obj_id[0];
         }
 
-        obj_id[] yes = utils.getObjIdArrayScriptVar(host, "readyCheck.snapshot.yes");
+        obj_id[] yes = utils.getObjIdArrayScriptVar(groupId, "readyCheck.responses.yes");
         if (yes == null) {
             yes = new obj_id[0];
         }
 
-        obj_id[] no = utils.getObjIdArrayScriptVar(host, "readyCheck.snapshot.no");
+        obj_id[] no = utils.getObjIdArrayScriptVar(groupId, "readyCheck.responses.no");
         if (no == null) {
             no = new obj_id[0];
         }
@@ -365,22 +379,20 @@ public class group_ready_check extends script.base_script
             return;
         }
 
-        int snapshotTime = utils.getIntScriptVar(host, "readyCheck.snapshot.time");
-
         String[][] memberPlayersReady = buildReadyCheckTable(none, yes, no);
 
         //establish constants of the window layout
-        String prompt = "Ready Check as of " + getCalendarTimeStringLocal(snapshotTime);
+        String prompt = "Ready Check Status";
         String[] table_titles =
-                {
-                        "@spam:table_title_player",
-                        "@spam:table_title_status",
-                };
+        {
+                "@spam:table_title_player",
+                "@spam:table_title_status",
+        };
         String[] table_types =
-                {
-                        "text",
-                        "text"
-                };
+        {
+                "text",
+                "text"
+        };
 
         //sort the display list by the names of the toons
         Arrays.sort(memberPlayersReady, (row1, row2) -> row1[0].compareToIgnoreCase(row2[0]));
@@ -395,12 +407,10 @@ public class group_ready_check extends script.base_script
         if (groupId == null) {
             return SCRIPT_CONTINUE;
         }
-        obj_id groupLeaderId = getGroupLeaderId(groupId);
 
         int btn = sui.getIntButtonPressed(params);
         if (btn == sui.BP_OK)
         {
-            snapshotReadyCheckResponseScriptVars(groupLeaderId, self);
             showReadyCheckSnapshotPage(self);
         }
         return SCRIPT_CONTINUE;
@@ -429,7 +439,7 @@ public class group_ready_check extends script.base_script
         }
         return memberPlayersReady;
     }
-    //response method to SUI MessageBox asking if the group leader would like to create a new ready check
+    //response method to SUI MessageBox asking if the group member would like to create a new ready check
     public int onReadyCheckCreateNewResponse(obj_id self, dictionary params) throws InterruptedException
     {
         int btn = sui.getIntButtonPressed(params);
@@ -439,7 +449,7 @@ public class group_ready_check extends script.base_script
         }
         return SCRIPT_CONTINUE;
     }
-    //response method to SUI MessageBox informing a non-leader member there is no snapshot of a ready check to show
+    //response method to SUI MessageBox informing a non-performer member there is no snapshot of a ready check to show
     public int onReadyCheckNoSnapshotResponse(obj_id self, dictionary params) throws InterruptedException
     {
         return SCRIPT_CONTINUE;
@@ -469,9 +479,9 @@ public class group_ready_check extends script.base_script
     //response to invoke messageTo for group members to be sent ready checks
     public int receiveReadyRequest(obj_id self, dictionary params) throws InterruptedException
     {
-        //get the leader of the group sending the ready request
-        obj_id leaderId = params.getObjId("leader_id");
-        if (leaderId == null)
+        //get the performer cancelling the ready request
+        obj_id performerId = params.getObjId("performer_id");
+        if (performerId == null)
         {
             return SCRIPT_CONTINUE;
         }
@@ -482,14 +492,13 @@ public class group_ready_check extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
-        //ensure there is a group leader of self's group
-        obj_id selfGroupLeaderId = getGroupLeaderId(groupId);
-        if (selfGroupLeaderId == null) {
+        obj_id groupReadyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        if (groupReadyCheckPerformer == null) {
             return SCRIPT_CONTINUE;
         }
 
-        //ensure self's group leader is the same as the group leader requesting the ready check
-        if (selfGroupLeaderId != leaderId) {
+        //ensure the group ready check performer matches who sent the requests for ready checks
+        if (groupReadyCheckPerformer != performerId) {
             return SCRIPT_CONTINUE;
         }
 
@@ -542,9 +551,8 @@ public class group_ready_check extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
-        //ensure there is a group leader to send the response to
-        obj_id leaderId = getGroupLeaderId(groupId);
-        if (leaderId == null) {
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        if (readyCheckPerformer == null) {
             return SCRIPT_CONTINUE;
         }
 
@@ -553,12 +561,12 @@ public class group_ready_check extends script.base_script
         if (btn == sui.BP_CANCEL)
         {
             responseParams.put("ready", false);
-            messageTo(leaderId, "readyCheckResponse", responseParams, 1.0f, false);
+            messageTo(readyCheckPerformer, "readyCheckResponse", responseParams, 1.0f, false);
         }
         else
         {
             responseParams.put("ready", true);
-            messageTo(leaderId, "readyCheckResponse", responseParams, 1.0f, false);
+            messageTo(readyCheckPerformer, "readyCheckResponse", responseParams, 1.0f, false);
         }
         return SCRIPT_CONTINUE;
     }
@@ -583,7 +591,7 @@ public class group_ready_check extends script.base_script
         }
         return readyCheckResponsesNo;
     }
-    //response method to the messageTo invocation from members to leader informing the leader of their ready status
+    //response method to the messageTo invocation from members to performers informing the performer of their ready status
     public int readyCheckResponse(obj_id self, dictionary params) throws InterruptedException
     {
         //extract the responding object ID from the params dictionary
@@ -665,7 +673,7 @@ public class group_ready_check extends script.base_script
 
         return SCRIPT_CONTINUE;
     }
-    //response method to the messageTo invocation from members to leader informing the leader of their ready status
+    //reload the ready check status page for performers
     public void reloadReadyCheckPage(obj_id self) throws InterruptedException
     {
         obj_id[] none = getNoneResponseIds(self);
