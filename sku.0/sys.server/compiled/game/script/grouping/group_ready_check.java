@@ -53,13 +53,10 @@ public class group_ready_check extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
-        //see if this is the active performer of a ready check
-        if (readyCheckPerformer != self) {
-            showReadyCheckSnapshotPage(self);
+        if (params.equals("cancel")) {
+            cancelReadyCheck(self);
             return SCRIPT_CONTINUE;
         }
-
-        closeReadyCheckStatusPage(self);
 
         //ensure there are at least two players in the group to perform the ready check
         obj_id[] memberPlayerIds = getGroupMemberPlayers(groupId);
@@ -70,18 +67,27 @@ public class group_ready_check extends script.base_script
 
         if (params.equals("new")) {
             createNewReadyCheck(self);
-        } else if (params.equals("cancel")) {
-            cancelReadyCheck(self);
-        } else {
-            //get the response lists
-            obj_id[] none = getNoneResponseIds(self);
-            obj_id[] yes = getYesResponseIds(self);
-            obj_id[] no = getNoResponseIds(self);
-
-            //display the current status
-            showReadyCheckStatusPage(none, yes, no, self);
         }
 
+        if (readyCheckPerformer == null) {
+            //give the empty status check page which should prompt people who can initiate a ready check to do so
+            showReadyCheckStatusPage(new obj_id[0], new obj_id[0], new obj_id[0], self);
+        } else {
+            //see if this is the active performer of a ready check
+            if (readyCheckPerformer != self) {
+                //if not performer, show snapshot page
+                showReadyCheckSnapshotPage(self);
+                return SCRIPT_CONTINUE;
+            } else {
+                //get the response lists
+                obj_id[] none = getNoneResponseIds(self);
+                obj_id[] yes = getYesResponseIds(self);
+                obj_id[] no = getNoResponseIds(self);
+
+                //display the current status
+                showReadyCheckStatusPage(none, yes, no, self);
+            }
+        }
 
         return SCRIPT_CONTINUE;
     }
