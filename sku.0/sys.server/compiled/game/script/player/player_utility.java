@@ -3740,7 +3740,7 @@ public class player_utility extends script.base_script
             dictionary responseParams = new dictionary();
             responseParams.put("responding_id", self);
             responseParams.put("ready", params.equals("yes") || params.equals("y"));
-            messageTo(readyCheckPerformer, "readyCheckResponse", responseParams, 1.0f, false);
+            messageTo(groupId, "readyCheckResponse", responseParams, 1.0f, false);
             return SCRIPT_CONTINUE;
         }
 
@@ -3905,12 +3905,12 @@ public class player_utility extends script.base_script
         if (btn == sui.BP_CANCEL)
         {
             responseParams.put("ready", false);
-            messageTo(readyCheckPerformer, "readyCheckResponse", responseParams, 1.0f, false);
+            messageTo(groupId, "readyCheckResponse", responseParams, 1.0f, false);
         }
         else
         {
             responseParams.put("ready", true);
-            messageTo(readyCheckPerformer, "readyCheckResponse", responseParams, 1.0f, false);
+            messageTo(groupId, "readyCheckResponse", responseParams, 1.0f, false);
         }
         return SCRIPT_CONTINUE;
     }
