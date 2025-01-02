@@ -450,7 +450,7 @@ public class group_object extends script.base_script
         obj_id[] groupMembers = getGroupMemberIds(self);
         for (obj_id member : groupMembers) {
             sendSystemMessage(member, notificationMessage, "readyCheck");
-            player_utility.reloadStatusPageIfOpen(member);
+            player_utility.reloadSnapshotPageIfOpen(member);
         }
 
         //perform operations on the performer

@@ -3762,7 +3762,7 @@ public class player_utility extends script.base_script
 
         if (readyCheckPerformer == null) {
             //give the empty status check page which should prompt people who can initiate a ready check to do so
-            showReadyCheckStatusPage(new obj_id[0], new obj_id[0], new obj_id[0], self);
+            showReadyCheckStatusPage(self);
         } else {
             //see if this is the active performer of a ready check
             if (readyCheckPerformer != self) {
@@ -3776,7 +3776,7 @@ public class player_utility extends script.base_script
                 obj_id[] no = group_object.getReadyCheckNoIds(groupId);
 
                 //display the current status
-                showReadyCheckStatusPage(none, yes, no, self);
+                showReadyCheckStatusPage(self);
             }
         }
 
@@ -3833,19 +3833,6 @@ public class player_utility extends script.base_script
         int pid = sui.tableRowMajor(host, host, sui.REFRESH_CANCEL, "Ready Check", "handleReadyCheckPageResponse", prompt, table_titles, table_types, memberPlayersReady, false);
         sui.setPid(host, pid, "readyCheck");
     }
-    //reload the ready check status page for performers
-    public static void reloadReadyCheckPage(obj_id self) throws InterruptedException
-    {
-        obj_id groupId = getGroupObject(self);
-        if (groupId == null) {
-            return;
-        }
-
-        obj_id[] none = group_object.getReadyCheckNoneIds(groupId);
-        obj_id[] yes = group_object.getReadyCheckYesIds(groupId);
-        obj_id[] no = group_object.getReadyCheckNoIds(groupId);
-        showReadyCheckStatusPage(none, yes, no, self);
-    }
     public static void closeReadyCheckStatusPage(obj_id host) throws InterruptedException
     {
         //close the existing page if it is already open
@@ -3860,7 +3847,7 @@ public class player_utility extends script.base_script
     {
         if (sui.hasPid(host, "readyCheck"))
         {
-            reloadReadyCheckPage(host);
+            showReadyCheckStatusPage(host);
         }
     }
     //handler for the status page of the Ready Check being performed
@@ -3879,7 +3866,7 @@ public class player_utility extends script.base_script
                 return SCRIPT_CONTINUE;
             case sui.BP_OK:
                 closeReadyCheckRequestPage(self);
-                reloadReadyCheckPage(self);
+                showReadyCheckStatusPage(self);
                 return SCRIPT_CONTINUE;
         }
         return SCRIPT_CONTINUE;
