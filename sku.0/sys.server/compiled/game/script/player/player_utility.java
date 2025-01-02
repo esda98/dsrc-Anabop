@@ -1,6 +1,7 @@
 package script.player;
 
 import script.*;
+import script.grouping.group_object;
 import script.library.*;
 
 import java.util.Arrays;
@@ -57,6 +58,10 @@ public class player_utility extends script.base_script
     public static final String SCRIPTVAR_RENAME_CHARACTER_NEW_NAME = "renameCharacterNewName";
     public static final String SCRIPTVAR_RENAME_CHARACTER_UNVERIFIED_NEW_NAME = "renameCharacterUnverifiedNewName";
     public static final String GUARD_OCCUPIED = "occupied";
+    public static final string_id SID_READY_CHECK_MUST_BE_GROUPED = new string_id("spam", "ready_check_must_be_grouped");
+    public static final string_id SID_READY_CHECK_TWO_OR_MORE = new string_id("spam", "ready_check_two_or_more");
+    public static final string_id SID_READY_CHECK_RESPONSE_NO_CHECK = new string_id("spam", "ready_check_response_no_check");
+    public static final string_id SID_READY_CHECK_MUST_BE_LEADER = new string_id("spam", "ready_check_must_be_leader");
     public int OnLogin(obj_id self) throws InterruptedException
     {
         if (utils.checkConfigFlag("GameServer", "jediTestResources"))
@@ -3709,4 +3714,430 @@ public class player_utility extends script.base_script
         sendSystemMessage(self, "Setting the city's GCW defender region to " + localize(new string_id("gcw_regions", selectedGcwDefenderRegion)) + ". This may take a few seconds. You will receive mail confirmation once the change has been completed.", "");
         return SCRIPT_CONTINUE;
     }
+    //ready check slash command handler
+    public int readyCheck(obj_id self, obj_id target, String params, float defaultTime) throws InterruptedException
+    {
+        //get the group members of self
+        obj_id groupId = getGroupObject(self);
+        //if there is no group ID, give an error message to the user
+        if (groupId == null) {
+            sendSystemMessage(self, SID_READY_CHECK_MUST_BE_GROUPED);
+            return SCRIPT_CONTINUE;
+        }
+
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+
+        //check if this is a ready check response command
+        if ((params.equals("yes") || params.equals("y"))
+                || (params.equals("no") || params.equals("n"))) {
+
+            //if there is no active ready check, inform the command performer that there is no ready check to respond to
+            if (readyCheckPerformer == null) {
+                sendSystemMessage(self, SID_READY_CHECK_RESPONSE_NO_CHECK);
+                return SCRIPT_CONTINUE;
+            }
+
+            dictionary responseParams = new dictionary();
+            responseParams.put("responding_id", self);
+            responseParams.put("ready", params.equals("yes") || params.equals("y"));
+            messageTo(readyCheckPerformer, "readyCheckResponse", responseParams, 1.0f, false);
+            return SCRIPT_CONTINUE;
+        }
+
+        if (params.equals("cancel")) {
+            group_object.cancelReadyCheck(self);
+            return SCRIPT_CONTINUE;
+        }
+
+        //ensure there are at least two players in the group to perform the ready check
+        obj_id[] memberPlayerIds = group_object.getGroupMemberPlayers(groupId);
+        if (memberPlayerIds.length < 2) {
+            sendSystemMessage(self, SID_READY_CHECK_TWO_OR_MORE);
+            return SCRIPT_CONTINUE;
+        }
+
+        if (params.equals("new")) {
+            group_object.createNewReadyCheck(self);
+        }
+
+        if (readyCheckPerformer == null) {
+            //give the empty status check page which should prompt people who can initiate a ready check to do so
+            showReadyCheckStatusPage(new obj_id[0], new obj_id[0], new obj_id[0], self);
+        } else {
+            //see if this is the active performer of a ready check
+            if (readyCheckPerformer != self) {
+                //if not performer, show snapshot page
+                showReadyCheckSnapshotPage(self);
+                return SCRIPT_CONTINUE;
+            } else {
+                //get the response lists
+                obj_id[] none = group_object.getReadyCheckNoneIds(groupId);
+                obj_id[] yes = group_object.getReadyCheckYesIds(groupId);
+                obj_id[] no = group_object.getReadyCheckNoIds(groupId);
+
+                //display the current status
+                showReadyCheckStatusPage(none, yes, no, self);
+            }
+        }
+
+        return SCRIPT_CONTINUE;
+    }
+    public static void showReadyCheckStatusPage(obj_id host) throws InterruptedException
+    {
+        var groupId = getGroupObject(host);
+        if (groupId == null) {
+            sendSystemMessage(host, SID_READY_CHECK_MUST_BE_GROUPED);
+            return;
+        }
+
+        obj_id[] none = group_object.getReadyCheckNoneIds(groupId);
+        obj_id[] yes = group_object.getReadyCheckYesIds(groupId);
+        obj_id[] no = group_object.getReadyCheckNoIds(groupId);
+
+        showReadyCheckStatusPage(none, yes, no, host);
+    }
+    public static void showReadyCheckStatusPage(obj_id[] none, obj_id[] yes, obj_id[] no, obj_id host) throws InterruptedException
+    {
+        if (none.length == 0 && yes.length == 0 && no.length == 0) {
+            //Keep Non-Group Leaders from Creating a new Ready Check: Remove to enable non-leaders to create ready checks
+            obj_id leaderId = getGroupLeaderId(getGroupObject(host));
+            if (leaderId != host) {
+                sendSystemMessage(host, SID_READY_CHECK_MUST_BE_LEADER);
+                return;
+            }
+
+            closeReadyCheckCreateNewPage(host);
+            int pid = sui.msgbox(host, host, "@spam:ready_check_create_new_prompt", sui.YES_NO, "@spam:ready_check_create_new_title", sui.MSG_QUESTION, "onReadyCheckCreateNewResponse");
+            sui.setPid(host, pid, "readyCheck.createNew");
+            return;
+        }
+
+        String[][] memberPlayersReady = buildReadyCheckTable(none, yes, no);
+
+        //establish constants of the window layout
+        String prompt = "@spam:ready_check_table_prompt";
+        String[] table_titles =
+                {
+                        "@spam:table_title_player",
+                        "@spam:table_title_status",
+                };
+        String[] table_types =
+                {
+                        "text",
+                        "text"
+                };
+
+        //sort the display list by the names of the toons
+        Arrays.sort(memberPlayersReady, (row1, row2) -> row1[0].compareToIgnoreCase(row2[0]));
+        closeReadyCheckStatusPage(host);
+        int pid = sui.tableRowMajor(host, host, sui.REFRESH_CANCEL, "Ready Check", "handleReadyCheckPageResponse", prompt, table_titles, table_types, memberPlayersReady, false);
+        sui.setPid(host, pid, "readyCheck");
+    }
+    //reload the ready check status page for performers
+    public static void reloadReadyCheckPage(obj_id self) throws InterruptedException
+    {
+        obj_id groupId = getGroupObject(self);
+        if (groupId == null) {
+            return;
+        }
+
+        obj_id[] none = group_object.getReadyCheckNoneIds(groupId);
+        obj_id[] yes = group_object.getReadyCheckYesIds(groupId);
+        obj_id[] no = group_object.getReadyCheckNoIds(groupId);
+        showReadyCheckStatusPage(none, yes, no, self);
+    }
+    public static void closeReadyCheckStatusPage(obj_id host) throws InterruptedException
+    {
+        //close the existing page if it is already open
+        if (sui.hasPid(host, "readyCheck"))
+        {
+            int pid = sui.getPid(host, "readyCheck");
+            forceCloseSUIPage(pid);
+            sui.removePid(host, "readyCheck");
+        }
+    }
+    public static void reloadStatusPageIfOpen(obj_id host) throws InterruptedException
+    {
+        if (sui.hasPid(host, "readyCheck"))
+        {
+            reloadReadyCheckPage(host);
+        }
+    }
+    //handler for the status page of the Ready Check being performed
+    public int handleReadyCheckPageResponse(obj_id self, dictionary params) throws InterruptedException
+    {
+        //ensure there are some values in the params dictionary
+        if (params == null || params.isEmpty())
+        {
+            return SCRIPT_CONTINUE;
+        }
+
+        int bp = sui.getIntButtonPressed(params);
+        switch (bp) {
+            case sui.BP_CANCEL:
+                group_object.cancelReadyCheck(self);
+                return SCRIPT_CONTINUE;
+            case sui.BP_OK:
+                closeReadyCheckRequestPage(self);
+                reloadReadyCheckPage(self);
+                return SCRIPT_CONTINUE;
+        }
+        return SCRIPT_CONTINUE;
+    }
+    //response method to SUI MessageBox asking if the group member is ready
+    public int onReadyCheckRequestResponse(obj_id self, dictionary params) throws InterruptedException
+    {
+        int btn = sui.getIntButtonPressed(params);
+
+        //ensure the user is grouped when performing response
+        obj_id groupId = getGroupObject(self);
+        if (groupId == null) {
+            return SCRIPT_CONTINUE;
+        }
+
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        if (readyCheckPerformer == null) {
+            return SCRIPT_CONTINUE;
+        }
+
+        dictionary responseParams = new dictionary();
+        responseParams.put("responding_id", self);
+        if (btn == sui.BP_CANCEL)
+        {
+            responseParams.put("ready", false);
+            messageTo(readyCheckPerformer, "readyCheckResponse", responseParams, 1.0f, false);
+        }
+        else
+        {
+            responseParams.put("ready", true);
+            messageTo(readyCheckPerformer, "readyCheckResponse", responseParams, 1.0f, false);
+        }
+        return SCRIPT_CONTINUE;
+    }
+    public static void closeReadyCheckRequestPage(obj_id host) throws InterruptedException
+    {
+        //close the existing readyCheck.request if it is already open
+        if (sui.hasPid(host, "readyCheck.request"))
+        {
+            int pid = sui.getPid(host, "readyCheck.request");
+            forceCloseSUIPage(pid);
+            sui.removePid(host, "readyCheck.request");
+        }
+    }
+    //response method to SUI MessageBox asking if the group member would like to create a new ready check
+    public int onReadyCheckCreateNewResponse(obj_id self, dictionary params) throws InterruptedException
+    {
+        int btn = sui.getIntButtonPressed(params);
+        if (btn == sui.BP_OK)
+        {
+            group_object.createNewReadyCheck(self);
+        }
+        return SCRIPT_CONTINUE;
+    }
+    public static void closeReadyCheckCreateNewPage(obj_id host) throws InterruptedException
+    {
+        //close the existing readyCheck.request if it is already open
+        if (sui.hasPid(host, "readyCheck.createNew"))
+        {
+            int pid = sui.getPid(host, "readyCheck.createNew");
+            forceCloseSUIPage(pid);
+            sui.removePid(host, "readyCheck.createNew");
+        }
+    }
+    public static void showReadyCheckSnapshotPage(obj_id host) throws InterruptedException
+    {
+        obj_id groupId = getGroupObject(host);
+        if (groupId == null) {
+            return;
+        }
+
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        if (readyCheckPerformer == null) {
+            sendSystemMessage(host, SID_READY_CHECK_RESPONSE_NO_CHECK);
+            return;
+        }
+
+        obj_id[] none = utils.getObjIdArrayScriptVar(groupId, "readyCheck.responses.none");
+        if (none == null) {
+            none = new obj_id[0];
+        }
+
+        obj_id[] yes = utils.getObjIdArrayScriptVar(groupId, "readyCheck.responses.yes");
+        if (yes == null) {
+            yes = new obj_id[0];
+        }
+
+        obj_id[] no = utils.getObjIdArrayScriptVar(groupId, "readyCheck.responses.no");
+        if (no == null) {
+            no = new obj_id[0];
+        }
+
+        if (none.length == 0 && yes.length == 0 && no.length == 0) {
+            closeReadyCheckNoSnapshotPage(host);
+            int pid = sui.msgbox(host, host, "@spam:ready_check_no_snapshot_prompt", sui.OK_ONLY, "@spam:ready_check_no_snapshot_title", sui.MSG_QUESTION, "onReadyCheckNoSnapshotResponse");
+            sui.setPid(host, pid, "readyCheck.noSnapshot");
+            return;
+        }
+
+        String[][] memberPlayersReady = buildReadyCheckTable(none, yes, no);
+
+        //establish constants of the window layout
+        String prompt = "Ready Check Status";
+        String[] table_titles =
+                {
+                        "@spam:table_title_player",
+                        "@spam:table_title_status",
+                };
+        String[] table_types =
+                {
+                        "text",
+                        "text"
+                };
+
+        //sort the display list by the names of the toons
+        Arrays.sort(memberPlayersReady, (row1, row2) -> row1[0].compareToIgnoreCase(row2[0]));
+        closeReadyCheckSnapshotPage(host);
+        int pid = sui.tableRowMajor(host, host, sui.REFRESH_ONLY, "Ready Check Snapshot", "handleReadyCheckSnapshotPageResponse", prompt, table_titles, table_types, memberPlayersReady, false);
+        sui.setPid(host, pid, "readyCheck.snapshot");
+    }
+    public static void closeReadyCheckSnapshotPage(obj_id host) throws InterruptedException
+    {
+        //close the existing page if it is already open
+        if (sui.hasPid(host, "readyCheck.snapshot"))
+        {
+            int pid = sui.getPid(host, "readyCheck.snapshot");
+            forceCloseSUIPage(pid);
+            sui.removePid(host, "readyCheck.snapshot");
+        }
+    }
+    public static void reloadSnapshotPageIfOpen(obj_id host) throws InterruptedException
+    {
+        //close the existing page if it is already open
+        if (sui.hasPid(host, "readyCheck.snapshot"))
+        {
+            showReadyCheckSnapshotPage(host);
+        }
+    }
+    //response method to SUI MessageBox informing a non-performer member there is no snapshot of a ready check to show
+    public int onReadyCheckNoSnapshotResponse(obj_id self, dictionary params) throws InterruptedException
+    {
+        return SCRIPT_CONTINUE;
+    }
+    public static void closeReadyCheckNoSnapshotPage(obj_id host) throws InterruptedException
+    {
+        //close the existing readyCheck.request if it is already open
+        if (sui.hasPid(host, "readyCheck.noSnapshot"))
+        {
+            int pid = sui.getPid(host, "readyCheck.noSnapshot");
+            forceCloseSUIPage(pid);
+            sui.removePid(host, "readyCheck.noSnapshot");
+        }
+    }
+    private static String[][] buildReadyCheckTable(obj_id[] none, obj_id[] yes, obj_id[] no) {
+        //build the display table
+        String[][] memberPlayersReady = new String[none.length + yes.length + no.length][2];
+        int i = 0;
+        for (obj_id member : none)
+        {
+            memberPlayersReady[i][0] = getPlayerName(member);
+            memberPlayersReady[i][1] = "\\#ff913dNo Response";
+            i++;
+        }
+        for (obj_id member : yes)
+        {
+            memberPlayersReady[i][0] = getPlayerName(member);
+            memberPlayersReady[i][1] = "\\#3bcf00Ready";
+            i++;
+        }
+        for (obj_id member : no)
+        {
+            memberPlayersReady[i][0] = getPlayerName(member);
+            memberPlayersReady[i][1] = "\\#eb1d0eNot Ready";
+            i++;
+        }
+        return memberPlayersReady;
+    }
+    //response method to Ready Check Snapshot SUI table view
+    public int handleReadyCheckSnapshotPageResponse(obj_id self, dictionary params) throws InterruptedException
+    {
+        obj_id groupId = getGroupObject(self);
+        if (groupId == null) {
+            return SCRIPT_CONTINUE;
+        }
+
+        int btn = sui.getIntButtonPressed(params);
+        if (btn == sui.BP_OK)
+        {
+            showReadyCheckSnapshotPage(self);
+        }
+        return SCRIPT_CONTINUE;
+    }
+    //response to invoke messageTo for group members to be sent ready checks
+    //ready check pop on members
+    public int receiveReadyRequest(obj_id self, dictionary params) throws InterruptedException
+    {
+        //get the performer cancelling the ready request
+        obj_id performerId = params.getObjId("performer_id");
+        if (performerId == null)
+        {
+            return SCRIPT_CONTINUE;
+        }
+
+        //ensure the user is grouped when receiving a ready request
+        obj_id groupId = getGroupObject(self);
+        if (groupId == null) {
+            return SCRIPT_CONTINUE;
+        }
+
+        obj_id groupReadyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        if (groupReadyCheckPerformer == null) {
+            return SCRIPT_CONTINUE;
+        }
+
+        //ensure the group ready check performer matches who sent the requests for ready checks
+        if (groupReadyCheckPerformer != performerId) {
+            return SCRIPT_CONTINUE;
+        }
+
+        closeReadyCheckRequestPage(self);
+
+        //display the ready check request
+        play2dNonLoopingSound(self, "sound/ui_incoming_im.snd");
+        int pid = sui.msgbox(self, self, "@spam:ready_check_request_prompt", sui.YES_NO, "@spam:ready_check_request_title", sui.MSG_QUESTION, "onReadyCheckRequestResponse");
+        sui.setPid(self, pid, "readyCheck.request");
+        return SCRIPT_CONTINUE;
+    }
+    //handler for performer to invoke on members to cancel ready check operations on their client
+    //cancel handler
+    public int rescindReadyCheckRequest(obj_id self, dictionary params) throws InterruptedException
+    {
+        //get the performer of the ready check cancellation
+        obj_id performerId = params.getObjId("performer_id");
+        if (performerId == null)
+        {
+            return SCRIPT_CONTINUE;
+        }
+
+        //ensure the user is grouped when receiving a ready request
+        obj_id groupId = getGroupObject(self);
+        if (groupId == null) {
+            return SCRIPT_CONTINUE;
+        }
+
+        //ensure the performer of the active ready check has issued the cancellation request
+        obj_id groupReadyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        if (groupReadyCheckPerformer == null) {
+            return SCRIPT_CONTINUE;
+        }
+
+        //ensure the ready check performer is performing the cancellation
+        if (groupReadyCheckPerformer != performerId) {
+            return SCRIPT_CONTINUE;
+        }
+
+        closeReadyCheckRequestPage(self);
+        closeReadyCheckSnapshotPage(self);
+        return SCRIPT_CONTINUE;
+    }
+
 }

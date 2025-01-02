@@ -5,6 +5,8 @@
 
 package script;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +30,28 @@ public class collections
 			map.put(keys[i], values[i]);
 		}
 		return map;
+	}
+
+	public static <T> T[] removeElement(T[] array, T element) {
+		// Use an ArrayList as an intermediary
+		ArrayList<T> tempList = new ArrayList<>();
+		for (T item : array) {
+			if (!item.equals(element)) {
+				tempList.add(item);
+			}
+		}
+
+		return tempList.toArray(Arrays.copyOf(array, 0));
+	}
+
+	public static <T> T[] addElement(T[] array, T element) {
+		// Create a new array with one additional slot
+		T[] newArray = Arrays.copyOf(array, array.length + 1);
+
+		// Add the new element to the last position
+		newArray[array.length] = element;
+
+		return newArray;
 	}
 }
 

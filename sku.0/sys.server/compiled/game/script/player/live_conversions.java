@@ -634,10 +634,6 @@ public class live_conversions extends script.base_script
     }
     public void addPlayerScripts(obj_id player) throws InterruptedException
     {
-        if (!hasScript(player, "grouping.group_ready_check"))
-        {
-            attachScript(player, "grouping.group_ready_check");
-        }
         if (!hasScript(player, "systems.storyteller.storyteller_commands"))
         {
             attachScript(player, "systems.storyteller.storyteller_commands");

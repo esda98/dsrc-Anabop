@@ -1178,7 +1178,13 @@ public class base_player extends script.base_script
         {
             performance.holographicCleanup(self);
         }
-        squad_leader.clearRallyPoint(self);
+        if (utils.hasScriptVar(groupId, "readyCheckPerformer"))
+        {
+            //dispatch a message to the group to handle removal of the player obj_id from ready check
+            dictionary leftParams = new dictionary();
+            leftParams.put("obj_id", self);
+            messageTo(groupId, "leftGroupReadyCheck", leftParams, 1, false);
+        }
         detachScript(self, group.SCRIPT_GROUP_MEMBER);
         return SCRIPT_CONTINUE;
     }
