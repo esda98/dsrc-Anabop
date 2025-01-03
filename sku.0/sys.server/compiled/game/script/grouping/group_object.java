@@ -296,12 +296,11 @@ public class group_object extends script.base_script
     //helper method to clear scriptvars related to ready check from the group
     public static void clearReadyCheckVars(obj_id groupId) throws InterruptedException
     {
-        obj_id[] none = new obj_id[] {};
-        obj_id[] yes = new obj_id[] {};
-        obj_id[] no = new obj_id[] {};
-
-        setReadyCheckVars(groupId, none, yes, no, null);
-        utils.setScriptVar(groupId, "activeCleanupId", 0);
+        utils.removeScriptVar(groupId, "readyCheck.responses.none");
+        utils.removeScriptVar(groupId, "readyCheck.responses.yes");
+        utils.removeScriptVar(groupId, "readyCheck.responses.no");
+        utils.removeScriptVar(groupId, "activeCleanupId");
+        utils.removeScriptVar(groupId, "readyCheckPerformer");
     }
     public static void setReadyCheckVars(obj_id groupId, obj_id[] none, obj_id[] yes, obj_id[] no, obj_id performer) throws InterruptedException
     {
@@ -370,6 +369,7 @@ public class group_object extends script.base_script
     //response method to the messageTo invocation from members to performers informing the performer of their ready status
     public int readyCheckResponse(obj_id self, dictionary params) throws InterruptedException
     {
+        sendSystemMessageTestingOnly(getGroupLeaderId(self), "Ready Check Begin: " + self);
         //extract the responding object ID from the params dictionary
         obj_id respondingId = params.getObjId("responding_id");
         if (respondingId == null) {
@@ -386,41 +386,9 @@ public class group_object extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
-        //create the list of people who have not yet responded to the ready check as the previous list's set without the responder
-        //removes the responder from the list if they previously were in it
-//        ArrayList<obj_id> newNoneResponses = new ArrayList<>();
-//        for (obj_id member : readyCheckResponsesNone) {
-//            if (member != respondingId) {
-//                newNoneResponses.add(member);
-//            }
-//        }
-
         boolean ready = params.getBoolean("ready");
-        //create the yes list as the previous list's set without the responder
-        //removes the responder from the list if they previously were in it
-//        ArrayList<obj_id> newYesResponses = new ArrayList<>();
-//        for (obj_id member : readyCheckResponsesYes) {
-//            if (member != respondingId) {
-//                newYesResponses.add(member);
-//            } else if (ready) {
-//                //if user already in yes list and responding ready, inform the responder they are already set as ready
-//                sendSystemMessage(respondingId, SID_READY_CHECK_DUPLICATE_YES);
-//                return SCRIPT_CONTINUE;
-//            }
-//        }
-
-        //create the yes list as the previous list's set without the responder
-        //removes the responder from the list if they previously were in it
-//        ArrayList<obj_id> newNoResponses = new ArrayList<>();
-//        for (obj_id member : readyCheckResponsesNo) {
-//            if (member != respondingId) {
-//                newNoResponses.add(member);
-//            } else if (!ready) {
-//                //if user already in no list and responding ready, inform the responder they are already set as not ready
-//                sendSystemMessage(respondingId, SID_READY_CHECK_DUPLICATE_NO);
-//                return SCRIPT_CONTINUE;
-//            }
-//        }
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(self, "readyCheckPerformer");
+        sendSystemMessageTestingOnly(readyCheckPerformer, "About to remove");
 
         var newNone = collections.removeElement(readyCheckResponsesNone, respondingId);
         var newYes = collections.removeElement(readyCheckResponsesYes, respondingId);
@@ -431,30 +399,35 @@ public class group_object extends script.base_script
         {
             notificationMessage = getPlayerName(respondingId) + " is ready";
             newYes = collections.addElement(newYes, respondingId);
+            sendSystemMessage(readyCheckPerformer, "Added to yes", "readyCheck");
         }
         else
         {
             notificationMessage = getPlayerName(respondingId) + " is not ready";
             newNo = collections.addElement(newNo, respondingId);
+            sendSystemMessage(readyCheckPerformer, "Added to no", "readyCheck");
         }
+
 
         //save the scriptvar values
         setReadyCheckResponseVars(self, newNone, newYes, newNo);
+        sendSystemMessageTestingOnly(readyCheckPerformer, "set vars on " + self);
         reloadGroupMemberReadyCheckPages(self, notificationMessage);
-
+        sendSystemMessage(readyCheckPerformer, "Reloaded", "readyCheck");
         return SCRIPT_CONTINUE;
     }
-    public static void reloadGroupMemberReadyCheckPages(obj_id self, String notificationMessage) throws InterruptedException
+    public static void reloadGroupMemberReadyCheckPages(obj_id groupId, String notificationMessage) throws InterruptedException
     {
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
         //notify the group members of the ready check response
-        obj_id[] groupMembers = getGroupMemberIds(self);
+        obj_id[] groupMembers = getGroupMemberIds(groupId);
+        sendSystemMessageTestingOnly(readyCheckPerformer, "group members: " + groupMembers.length);
         for (obj_id member : groupMembers) {
             sendSystemMessage(member, notificationMessage, "readyCheck");
             player_utility.reloadSnapshotPageIfOpen(member);
         }
 
         //perform operations on the performer
-        obj_id readyCheckPerformer = utils.getObjIdScriptVar(self, "readyCheckPerformer");
         if (readyCheckPerformer == null) {
             return;
         }
