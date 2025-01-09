@@ -9,7 +9,7 @@ import java.util.*;
 public class group_object extends script.base_script
 {
     public static final string_id SID_READY_CHECK_RESPONSE_NO_CHECK = new string_id("spam", "ready_check_response_no_check");
-    public static final string_id SID_READY_CHECK_CANCELLED = new string_id("spam", "ready_check_cancelled");
+
     public static final string_id SID_READY_CHECK_TWO_OR_MORE = new string_id("spam", "ready_check_two_or_more");
     public static final string_id SID_READY_CHECK_START = new string_id("spam", "ready_check_start");
     public static final string_id SID_READY_CHECK_DUPLICATE_YES = new string_id("spam", "ready_check_duplicate_yes");
@@ -301,7 +301,6 @@ public class group_object extends script.base_script
         utils.removeScriptVar(groupId, "readyCheck.responses.none");
         utils.removeScriptVar(groupId, "readyCheck.responses.yes");
         utils.removeScriptVar(groupId, "readyCheck.responses.no");
-        utils.removeScriptVar(groupId, "activeCleanupId");
         utils.removeScriptVar(groupId, VAR_READY_CHECK_PERFORMER);
     }
     public static void setReadyCheckVars(obj_id groupId, obj_id[] none, obj_id[] yes, obj_id[] no, obj_id performer) throws InterruptedException
@@ -546,8 +545,6 @@ public class group_object extends script.base_script
         }
 
         cancelGroupReadyCheck(groupId, cancelPerformer);
-
-        player_utility.sendPlayerSystemMessage(cancelPerformer, SID_READY_CHECK_CANCELLED);
     }
     public static void cancelGroupReadyCheck(obj_id groupId, obj_id cancelPerformer) throws InterruptedException
     {

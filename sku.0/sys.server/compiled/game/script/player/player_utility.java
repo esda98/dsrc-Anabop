@@ -62,6 +62,7 @@ public class player_utility extends script.base_script
     public static final string_id SID_READY_CHECK_TWO_OR_MORE = new string_id("spam", "ready_check_two_or_more");
     public static final string_id SID_READY_CHECK_RESPONSE_NO_CHECK = new string_id("spam", "ready_check_response_no_check");
     public static final string_id SID_READY_CHECK_MUST_BE_LEADER = new string_id("spam", "ready_check_must_be_leader");
+    public static final string_id SID_READY_CHECK_CANCELLED = new string_id("spam", "ready_check_cancelled");
     public int OnLogin(obj_id self) throws InterruptedException
     {
         if (utils.checkConfigFlag("GameServer", "jediTestResources"))
@@ -4194,6 +4195,7 @@ public class player_utility extends script.base_script
         closeReadyCheckRequestPage(self);
         closeReadyCheckStatusPage(self);
         closeReadyCheckSnapshotPage(self);
+        sendSystemMessage(self, SID_READY_CHECK_CANCELLED);
         return SCRIPT_CONTINUE;
     }
     //generic helper for sending system messages to a player from anywhere
