@@ -17,6 +17,8 @@ public class group_object extends script.base_script
     public static final string_id SID_READY_CHECK_MUST_BE_LEADER = new string_id("spam", "ready_check_must_be_leader");
     public static final string_id SID_READY_CHECK_MUST_BE_GROUPED = new string_id("spam", "ready_check_must_be_grouped");
 
+    public static final String VAR_READY_CHECK_PERFORMER = "readyCheckPerformer";
+
     public group_object()
     {
     }
@@ -300,12 +302,12 @@ public class group_object extends script.base_script
         utils.removeScriptVar(groupId, "readyCheck.responses.yes");
         utils.removeScriptVar(groupId, "readyCheck.responses.no");
         utils.removeScriptVar(groupId, "activeCleanupId");
-        utils.removeScriptVar(groupId, "readyCheckPerformer");
+        utils.removeScriptVar(groupId, VAR_READY_CHECK_PERFORMER);
     }
     public static void setReadyCheckVars(obj_id groupId, obj_id[] none, obj_id[] yes, obj_id[] no, obj_id performer) throws InterruptedException
     {
         setReadyCheckResponseVars(groupId, none, yes, no);
-        utils.setScriptVar(groupId, "readyCheckPerformer", performer);
+        utils.setScriptVar(groupId, VAR_READY_CHECK_PERFORMER, performer);
     }
     public static void setReadyCheckResponseVars(obj_id groupId, obj_id[] none, obj_id[] yes, obj_id[] no) throws InterruptedException
     {
@@ -386,7 +388,7 @@ public class group_object extends script.base_script
         }
 
         boolean ready = params.getBoolean("ready");
-        obj_id readyCheckPerformer = utils.getObjIdScriptVar(self, "readyCheckPerformer");
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(self, VAR_READY_CHECK_PERFORMER);
 
         var newNone = collections.removeElement(readyCheckResponsesNone, respondingId);
         var newYes = collections.removeElement(readyCheckResponsesYes, respondingId);
@@ -413,7 +415,7 @@ public class group_object extends script.base_script
     }
     public static void reloadGroupMemberReadyCheckPages(obj_id groupId, String notificationMessage) throws InterruptedException
     {
-        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, VAR_READY_CHECK_PERFORMER);
         //notify the group members of the ready check response
         obj_id[] groupMembers = getGroupMemberIds(groupId);
         for (obj_id member : groupMembers) {
@@ -437,7 +439,7 @@ public class group_object extends script.base_script
         }
 
         //ensure there is a ready check performer on the group
-        obj_id readyCheckPerformer = utils.getObjIdScriptVar(self, "readyCheckPerformer");
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(self, VAR_READY_CHECK_PERFORMER);
         if (readyCheckPerformer == null) {
             return SCRIPT_CONTINUE;
         }
@@ -480,7 +482,7 @@ public class group_object extends script.base_script
         System.out.println("LeftGroupReadyCheck - Has left group id in params: " + groupId);
 
         //check if the object id matches the performer of the ready check
-        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, VAR_READY_CHECK_PERFORMER);
         if (readyCheckPerformer == null)
         {
             //if no performer active, ready check is inactive
@@ -532,7 +534,7 @@ public class group_object extends script.base_script
         }
 
         //ensure the ready check performer is performing the ready check cancellation
-        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, VAR_READY_CHECK_PERFORMER);
         if (readyCheckPerformer == null) {
             player_utility.sendPlayerSystemMessage(cancelPerformer, SID_READY_CHECK_RESPONSE_NO_CHECK);
             return;

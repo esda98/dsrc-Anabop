@@ -31,6 +31,7 @@ public class group_member extends script.base_script
     }
     public int OnAttach(obj_id self) throws InterruptedException
     {
+        System.out.println("group_member::OnAttach - Start");
         obj_id groupObject = getGroupObject(self);
         if (isIdValid(groupObject))
         {
@@ -53,6 +54,7 @@ public class group_member extends script.base_script
     }
     public int OnDestroy(obj_id self) throws InterruptedException
     {
+        System.out.println("group_member::OnDestroy - Start");
         group.destroyGroupWaypoint(self);
         deltadictionary scriptVars = self.getScriptVars();
         if (scriptVars != null)
@@ -63,11 +65,13 @@ public class group_member extends script.base_script
     }
     public int OnLogout(obj_id self) throws InterruptedException
     {
+        System.out.println("group_member::OnLogout - Start");
         detachScript(self, SCRIPT_ME);
         return SCRIPT_CONTINUE;
     }
     public int OnDetach(obj_id self) throws InterruptedException
     {
+        System.out.println("group_member::onDetach - Start");
         deltadictionary scriptVars = self.getScriptVars();
         if (scriptVars != null)
         {
@@ -77,6 +81,20 @@ public class group_member extends script.base_script
         obj_id groupObject = getGroupObject(self);
         if (isIdValid(groupObject))
         {
+            if (utils.hasScriptVar(groupObject, group_object.VAR_READY_CHECK_PERFORMER))
+            {
+                System.out.println("group_member::onDetach - Has Ready Check Performer");
+                //dispatch a message to the group to handle removal of the player obj_id from ready check
+                dictionary leftParams = new dictionary();
+                leftParams.put("obj_id", self);
+                leftParams.put("group_id", groupObject);
+                messageTo(groupObject, "leftGroupReadyCheck", leftParams, 1, false);
+                System.out.println("group_member::onDetach - Sent Message to group");
+            }
+            else
+            {
+                System.out.println("group_member::onDetach - No ready check performer");
+            }
             if (utils.hasScriptVar(groupObject, combat.VAR_GROUP_VOLLEY_TARGET))
             {
                 obj_id target = utils.getObjIdScriptVar(groupObject, combat.VAR_GROUP_VOLLEY_TARGET);
