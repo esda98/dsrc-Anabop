@@ -3970,6 +3970,22 @@ public class player_utility extends script.base_script
             sui.removePid(host, "readyCheck.request");
         }
     }
+    public static void sendCloseReadyCheckRequestPage(obj_id playerId) throws InterruptedException
+    {
+        var params = new dictionary();
+        params.put("player_id", playerId);
+        messageTo(playerId, "receiveCloseReadyCheckRequestPage", params, 1, false);
+    }
+    public int receiveCloseReadyCheckRequestPage(obj_id self, dictionary params) throws InterruptedException
+    {
+        var playerId = params.getObjId("player_id");
+        if (playerId != self)
+        {
+            return SCRIPT_CONTINUE;
+        }
+        closeReadyCheckRequestPage(self);
+        return SCRIPT_CONTINUE;
+    }
     //response method to SUI MessageBox asking if the group member would like to create a new ready check
     public int onReadyCheckCreateNewResponse(obj_id self, dictionary params) throws InterruptedException
     {

@@ -542,6 +542,12 @@ public class group_object extends script.base_script
         setReadyCheckResponseVars(self, noneIds, yesIds, noIds);
         reloadGroupMemberReadyCheckPages(self, notificationMessage);
         System.out.println("LeftGroupReadyCheck - Completed");
+
+        //close the windows on the person leaving
+        player_utility.sendCloseReadyCheckSnapshotPage(objIdLeftGroup);
+        player_utility.sendCloseReadyCheckStatusPage(objIdLeftGroup);
+        player_utility.sendCloseReadyCheckRequestPage(objIdLeftGroup);
+
         return SCRIPT_CONTINUE;
     }
     public static void cancelCreatorsReadyCheck(obj_id cancelPerformer) throws InterruptedException
