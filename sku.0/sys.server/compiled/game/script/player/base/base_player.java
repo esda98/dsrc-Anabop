@@ -1183,6 +1183,7 @@ public class base_player extends script.base_script
             //dispatch a message to the group to handle removal of the player obj_id from ready check
             dictionary leftParams = new dictionary();
             leftParams.put("obj_id", self);
+            leftParams.put("group_id", groupId);
             messageTo(groupId, "leftGroupReadyCheck", leftParams, 1, false);
         }
         detachScript(self, group.SCRIPT_GROUP_MEMBER);

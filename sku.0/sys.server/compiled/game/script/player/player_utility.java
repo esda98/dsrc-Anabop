@@ -3745,7 +3745,7 @@ public class player_utility extends script.base_script
         }
 
         if (params.equals("cancel")) {
-            group_object.cancelReadyCheck(self);
+            group_object.cancelCreatorsReadyCheck(self);
             return SCRIPT_CONTINUE;
         }
 
@@ -3782,11 +3782,38 @@ public class player_utility extends script.base_script
 
         return SCRIPT_CONTINUE;
     }
-    public static void showReadyCheckStatusPage(obj_id host) throws InterruptedException
+    public static void sendShowReadyCheckStatusPageMessage(obj_id playerId) throws InterruptedException
     {
-        var groupId = getGroupObject(host);
+        dictionary params = new dictionary();
+        params.put("player_id", playerId);
+        messageTo(playerId, "receiveShowReadyCheckStatusPage", params, 1, false);
+    }
+    public int receiveShowReadyCheckStatusPage(obj_id self, dictionary params) throws InterruptedException
+    {
+        obj_id playerId = params.getObjId("player_id");
+        if (playerId == null || playerId != self)
+        {
+            return SCRIPT_CONTINUE;
+        }
+
+        var groupId = getGroupObject(self);
         if (groupId == null) {
-            sendSystemMessage(host, SID_READY_CHECK_MUST_BE_GROUPED);
+            sendSystemMessage(self, SID_READY_CHECK_MUST_BE_GROUPED);
+            return SCRIPT_CONTINUE;
+        }
+
+        obj_id[] none = group_object.getReadyCheckNoneIds(groupId);
+        obj_id[] yes = group_object.getReadyCheckYesIds(groupId);
+        obj_id[] no = group_object.getReadyCheckNoIds(groupId);
+
+        showReadyCheckStatusPage(none, yes, no, self);
+        return SCRIPT_CONTINUE;
+    }
+    public void showReadyCheckStatusPage(obj_id self) throws InterruptedException
+    {
+        var groupId = getGroupObject(self);
+        if (groupId == null) {
+            sendSystemMessage(self, SID_READY_CHECK_MUST_BE_GROUPED);
             return;
         }
 
@@ -3794,9 +3821,9 @@ public class player_utility extends script.base_script
         obj_id[] yes = group_object.getReadyCheckYesIds(groupId);
         obj_id[] no = group_object.getReadyCheckNoIds(groupId);
 
-        showReadyCheckStatusPage(none, yes, no, host);
+        showReadyCheckStatusPage(none, yes, no, self);
     }
-    public static void showReadyCheckStatusPage(obj_id[] none, obj_id[] yes, obj_id[] no, obj_id host) throws InterruptedException
+    public void showReadyCheckStatusPage(obj_id[] none, obj_id[] yes, obj_id[] no, obj_id host) throws InterruptedException
     {
         if (none.length == 0 && yes.length == 0 && no.length == 0) {
             //Keep Non-Group Leaders from Creating a new Ready Check: Remove to enable non-leaders to create ready checks
@@ -3819,10 +3846,12 @@ public class player_utility extends script.base_script
         String[] table_titles =
                 {
                         "@spam:table_title_player",
+                        "@spam:table_title_profession",
                         "@spam:table_title_status",
                 };
         String[] table_types =
                 {
+                        "text",
                         "text",
                         "text"
                 };
@@ -3833,22 +3862,51 @@ public class player_utility extends script.base_script
         int pid = sui.tableRowMajor(host, host, sui.REFRESH_CANCEL, "Ready Check", "handleReadyCheckPageResponse", prompt, table_titles, table_types, memberPlayersReady, false);
         sui.setPid(host, pid, "readyCheck");
     }
-    public static void closeReadyCheckStatusPage(obj_id host) throws InterruptedException
+    public void closeReadyCheckStatusPage(obj_id self) throws InterruptedException
     {
         //close the existing page if it is already open
-        if (sui.hasPid(host, "readyCheck"))
+        if (sui.hasPid(self, "readyCheck"))
         {
-            int pid = sui.getPid(host, "readyCheck");
+            int pid = sui.getPid(self, "readyCheck");
             forceCloseSUIPage(pid);
-            sui.removePid(host, "readyCheck");
+            sui.removePid(self, "readyCheck");
         }
     }
-    public static void reloadStatusPageIfOpen(obj_id host) throws InterruptedException
+    public static void sendCloseReadyCheckStatusPage(obj_id playerId) throws InterruptedException
     {
-        if (sui.hasPid(host, "readyCheck"))
+        var params = new dictionary();
+        params.put("player_id", playerId);
+        messageTo(playerId, "receiveCloseReadyCheckStatusPage", params, 1, false);
+    }
+    public int receiveCloseReadyCheckStatusPage(obj_id self, dictionary params) throws InterruptedException
+    {
+        var playerId = params.getObjId("player_id");
+        if (playerId != self)
         {
-            showReadyCheckStatusPage(host);
+            return SCRIPT_CONTINUE;
         }
+        closeReadyCheckStatusPage(self);
+        return SCRIPT_CONTINUE;
+    }
+    public static void sendReloadStatusPageIfOpen(obj_id playerId) throws InterruptedException
+    {
+        var params = new dictionary();
+        params.put("player_id", playerId);
+        messageTo(playerId, "receiveReloadStatusPageIfOpen", params, 1, false);
+    }
+    public int receiveReloadStatusPageIfOpen(obj_id self, dictionary params) throws InterruptedException
+    {
+        var playerId = params.getObjId("player_id");
+        if (playerId == null)
+        {
+            return SCRIPT_CONTINUE;
+        }
+
+        if (sui.hasPid(playerId, "readyCheck"))
+        {
+            showReadyCheckStatusPage(playerId);
+        }
+        return SCRIPT_CONTINUE;
     }
     //handler for the status page of the Ready Check being performed
     public int handleReadyCheckPageResponse(obj_id self, dictionary params) throws InterruptedException
@@ -3862,7 +3920,7 @@ public class player_utility extends script.base_script
         int bp = sui.getIntButtonPressed(params);
         switch (bp) {
             case sui.BP_CANCEL:
-                group_object.cancelReadyCheck(self);
+                group_object.cancelCreatorsReadyCheck(self);
                 return SCRIPT_CONTINUE;
             case sui.BP_OK:
                 closeReadyCheckRequestPage(self);
@@ -3931,16 +3989,16 @@ public class player_utility extends script.base_script
             sui.removePid(host, "readyCheck.createNew");
         }
     }
-    public static void showReadyCheckSnapshotPage(obj_id host) throws InterruptedException
+    public void showReadyCheckSnapshotPage(obj_id self) throws InterruptedException
     {
-        obj_id groupId = getGroupObject(host);
+        obj_id groupId = getGroupObject(self);
         if (groupId == null) {
             return;
         }
 
         obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
         if (readyCheckPerformer == null) {
-            sendSystemMessage(host, SID_READY_CHECK_RESPONSE_NO_CHECK);
+            sendSystemMessage(self, SID_READY_CHECK_RESPONSE_NO_CHECK);
             return;
         }
 
@@ -3960,9 +4018,9 @@ public class player_utility extends script.base_script
         }
 
         if (none.length == 0 && yes.length == 0 && no.length == 0) {
-            closeReadyCheckNoSnapshotPage(host);
-            int pid = sui.msgbox(host, host, "@spam:ready_check_no_snapshot_prompt", sui.OK_ONLY, "@spam:ready_check_no_snapshot_title", sui.MSG_QUESTION, "onReadyCheckNoSnapshotResponse");
-            sui.setPid(host, pid, "readyCheck.noSnapshot");
+            closeReadyCheckNoSnapshotPage(self);
+            int pid = sui.msgbox(self, self, "@spam:ready_check_no_snapshot_prompt", sui.OK_ONLY, "@spam:ready_check_no_snapshot_title", sui.MSG_QUESTION, "onReadyCheckNoSnapshotResponse");
+            sui.setPid(self, pid, "readyCheck.noSnapshot");
             return;
         }
 
@@ -3973,37 +4031,68 @@ public class player_utility extends script.base_script
         String[] table_titles =
                 {
                         "@spam:table_title_player",
+                        "@spam:table_title_profession",
                         "@spam:table_title_status",
                 };
         String[] table_types =
                 {
+                        "text",
                         "text",
                         "text"
                 };
 
         //sort the display list by the names of the toons
         Arrays.sort(memberPlayersReady, (row1, row2) -> row1[0].compareToIgnoreCase(row2[0]));
-        closeReadyCheckSnapshotPage(host);
-        int pid = sui.tableRowMajor(host, host, sui.REFRESH_ONLY, "Ready Check Snapshot", "handleReadyCheckSnapshotPageResponse", prompt, table_titles, table_types, memberPlayersReady, false);
-        sui.setPid(host, pid, "readyCheck.snapshot");
+        closeReadyCheckSnapshotPage(self);
+        int pid = sui.tableRowMajor(self, self, sui.REFRESH_ONLY, "Ready Check Snapshot", "handleReadyCheckSnapshotPageResponse", prompt, table_titles, table_types, memberPlayersReady, false);
+        sui.setPid(self, pid, "readyCheck.snapshot");
     }
-    public static void closeReadyCheckSnapshotPage(obj_id host) throws InterruptedException
+    public void closeReadyCheckSnapshotPage(obj_id self) throws InterruptedException
     {
         //close the existing page if it is already open
-        if (sui.hasPid(host, "readyCheck.snapshot"))
+        if (sui.hasPid(self, "readyCheck.snapshot"))
         {
-            int pid = sui.getPid(host, "readyCheck.snapshot");
+            int pid = sui.getPid(self, "readyCheck.snapshot");
             forceCloseSUIPage(pid);
-            sui.removePid(host, "readyCheck.snapshot");
+            sui.removePid(self, "readyCheck.snapshot");
         }
     }
-    public static void reloadSnapshotPageIfOpen(obj_id host) throws InterruptedException
+    public static void sendCloseReadyCheckSnapshotPage(obj_id playerId) throws InterruptedException
     {
-        //close the existing page if it is already open
-        if (sui.hasPid(host, "readyCheck.snapshot"))
+        var params = new dictionary();
+        params.put("player_id", playerId);
+        messageTo(playerId, "receiveCloseReadyCheckSnapshotPage", params, 1, false);
+    }
+    public int receiveCloseReadyCheckSnapshotPage(obj_id self, dictionary params) throws InterruptedException
+    {
+        var playerId = params.getObjId("player_id");
+        if (playerId != self)
         {
-            showReadyCheckSnapshotPage(host);
+            return SCRIPT_CONTINUE;
         }
+        closeReadyCheckSnapshotPage(self);
+        return SCRIPT_CONTINUE;
+    }
+    public static void sendReloadSnapshotPageIfOpen(obj_id playerId) throws InterruptedException
+    {
+        var params = new dictionary();
+        params.put("player_id", playerId);
+        messageTo(playerId, "receiveReloadSnapshotPageIfOpen", params, 1, false);
+    }
+    public int receiveReloadSnapshotPageIfOpen(obj_id self, dictionary params) throws InterruptedException
+    {
+        var playerId = params.getObjId("player_id");
+        if (playerId == null || playerId != self)
+        {
+            return SCRIPT_CONTINUE;
+        }
+
+        //close the existing page if it is already open
+        if (sui.hasPid(self, "readyCheck.snapshot"))
+        {
+            showReadyCheckSnapshotPage(self);
+        }
+        return SCRIPT_CONTINUE;
     }
     //response method to SUI MessageBox informing a non-performer member there is no snapshot of a ready check to show
     public int onReadyCheckNoSnapshotResponse(obj_id self, dictionary params) throws InterruptedException
@@ -4020,26 +4109,30 @@ public class player_utility extends script.base_script
             sui.removePid(host, "readyCheck.noSnapshot");
         }
     }
-    private static String[][] buildReadyCheckTable(obj_id[] none, obj_id[] yes, obj_id[] no) {
+    private static String[][] buildReadyCheckTable(obj_id[] none, obj_id[] yes, obj_id[] no) throws InterruptedException
+    {
         //build the display table
-        String[][] memberPlayersReady = new String[none.length + yes.length + no.length][2];
+        String[][] memberPlayersReady = new String[none.length + yes.length + no.length][3];
         int i = 0;
         for (obj_id member : none)
         {
             memberPlayersReady[i][0] = getPlayerName(member);
-            memberPlayersReady[i][1] = "\\#ff913dNo Response";
+            memberPlayersReady[i][1] = "@ui_roadmap:" + skill.getProfessionName(getSkillTemplate(member));
+            memberPlayersReady[i][2] = "\\#ff913dNo Response";
             i++;
         }
         for (obj_id member : yes)
         {
             memberPlayersReady[i][0] = getPlayerName(member);
-            memberPlayersReady[i][1] = "\\#3bcf00Ready";
+            memberPlayersReady[i][1] = "@ui_roadmap:" + skill.getProfessionName(getSkillTemplate(member));
+            memberPlayersReady[i][2] = "\\#3bcf00Ready";
             i++;
         }
         for (obj_id member : no)
         {
             memberPlayersReady[i][0] = getPlayerName(member);
-            memberPlayersReady[i][1] = "\\#eb1d0eNot Ready";
+            memberPlayersReady[i][1] = "@ui_roadmap:" + skill.getProfessionName(getSkillTemplate(member));
+            memberPlayersReady[i][2] = "\\#eb1d0eNot Ready";
             i++;
         }
         return memberPlayersReady;
@@ -4123,8 +4216,47 @@ public class player_utility extends script.base_script
         }
 
         closeReadyCheckRequestPage(self);
+        closeReadyCheckStatusPage(self);
         closeReadyCheckSnapshotPage(self);
         return SCRIPT_CONTINUE;
     }
+    //generic helper for sending system messages to a player from anywhere
+    public static void sendPlayerSystemMessage(obj_id playerId, String message, String oob)
+    {
+        var params = new dictionary();
+        params.put("message", message);
+        params.put("oob", oob);
+        messageTo(playerId, "receiveSendPlayerSystemMessage", params, 1, false);
+    }
+    //generic helper for sending system messages to a player from anywhere using string id's
+    public static void sendPlayerSystemMessage(obj_id playerId, string_id stringId)
+    {
+        var params = new dictionary();
+        params.put("string_id", stringId);
+        messageTo(playerId, "receiveSendPlayerSystemMessage", params, 1, false);
+    }
+    public int receiveSendPlayerSystemMessage(obj_id self, dictionary params) throws InterruptedException
+    {
+        //try to do a localized text send
+        var message = params.getString("message");
+        if (message != null)
+        {
+            var oob = params.getString("oob");
+            if (oob == null)
+            {
+                return SCRIPT_CONTINUE;
+            }
 
+            sendSystemMessage(self, message, oob);
+        }
+        //check if a string id
+        var stringId = params.getStringId("string_id");
+        if (stringId == null)
+        {
+            return SCRIPT_CONTINUE;
+        }
+
+        sendSystemMessage(self, stringId);
+        return SCRIPT_CONTINUE;
+    }
 }

@@ -319,25 +319,25 @@ public class group_object extends script.base_script
         var groupId = getGroupObject(creator);
         if (groupId == null)
         {
-            sendSystemMessage(creator, SID_READY_CHECK_MUST_BE_GROUPED);
+            player_utility.sendPlayerSystemMessage(creator, SID_READY_CHECK_MUST_BE_GROUPED);
             return;
         }
 
         //Keep Non-Group Leaders from Creating a new Ready Check: Remove to enable non-leaders to create ready checks
         obj_id leaderId = getGroupLeaderId(groupId);
         if (leaderId != creator) {
-            sendSystemMessage(creator, SID_READY_CHECK_MUST_BE_LEADER);
+            player_utility.sendPlayerSystemMessage(creator, SID_READY_CHECK_MUST_BE_LEADER);
             return;
         }
 
         //send the readyCheck.request to the group members
         obj_id[] memberPlayerIds = group_object.getGroupMemberPlayers(groupId);
         if (memberPlayerIds.length < 2) {
-            sendSystemMessage(creator, SID_READY_CHECK_TWO_OR_MORE);
+            player_utility.sendPlayerSystemMessage(creator, SID_READY_CHECK_TWO_OR_MORE);
             return;
         }
         for (obj_id member : memberPlayerIds) {
-            sendSystemMessage(member, SID_READY_CHECK_START);
+            player_utility.sendPlayerSystemMessage(member, SID_READY_CHECK_START);
             dictionary readyRequestParams = new dictionary();
             readyRequestParams.put("performer_id", creator);
             messageTo(member, "receiveReadyRequest", readyRequestParams, 1.0f, false);
@@ -350,7 +350,7 @@ public class group_object extends script.base_script
         group_object.setReadyCheckVars(groupId, memberPlayerIds, yes, no, creator);
 
         //display the current status page to the creator player
-        player_utility.showReadyCheckStatusPage(creator);
+        player_utility.sendShowReadyCheckStatusPageMessage(creator);
 
         //assign an id to this cleanup. if a cleanup attempt is processed and a different active cleanup ID is present, that cleanup can be discarded
         int activeCleanupId = utils.getIntScriptVar(groupId, "activeCleanupId");
@@ -369,7 +369,6 @@ public class group_object extends script.base_script
     //response method to the messageTo invocation from members to performers informing the performer of their ready status
     public int readyCheckResponse(obj_id self, dictionary params) throws InterruptedException
     {
-        sendSystemMessageTestingOnly(getGroupLeaderId(self), "Ready Check Begin: " + self);
         //extract the responding object ID from the params dictionary
         obj_id respondingId = params.getObjId("responding_id");
         if (respondingId == null) {
@@ -382,13 +381,12 @@ public class group_object extends script.base_script
         obj_id[] readyCheckResponsesNo = getReadyCheckNoIds(self);
 
         if (readyCheckResponsesNone.length == 0 && readyCheckResponsesYes.length == 0 && readyCheckResponsesNo.length == 0) {
-            sendSystemMessage(respondingId, SID_READY_CHECK_RESPONSE_NO_CHECK);
+            player_utility.sendPlayerSystemMessage(respondingId, SID_READY_CHECK_RESPONSE_NO_CHECK);
             return SCRIPT_CONTINUE;
         }
 
         boolean ready = params.getBoolean("ready");
         obj_id readyCheckPerformer = utils.getObjIdScriptVar(self, "readyCheckPerformer");
-        sendSystemMessageTestingOnly(readyCheckPerformer, "About to remove");
 
         var newNone = collections.removeElement(readyCheckResponsesNone, respondingId);
         var newYes = collections.removeElement(readyCheckResponsesYes, respondingId);
@@ -399,21 +397,18 @@ public class group_object extends script.base_script
         {
             notificationMessage = getPlayerName(respondingId) + " is ready";
             newYes = collections.addElement(newYes, respondingId);
-            sendSystemMessage(readyCheckPerformer, "Added to yes", "readyCheck");
+            player_utility.sendPlayerSystemMessage(readyCheckPerformer, "Added to yes", "readyCheck");
         }
         else
         {
             notificationMessage = getPlayerName(respondingId) + " is not ready";
             newNo = collections.addElement(newNo, respondingId);
-            sendSystemMessage(readyCheckPerformer, "Added to no", "readyCheck");
+            player_utility.sendPlayerSystemMessage(readyCheckPerformer, "Added to no", "readyCheck");
         }
-
 
         //save the scriptvar values
         setReadyCheckResponseVars(self, newNone, newYes, newNo);
-        sendSystemMessageTestingOnly(readyCheckPerformer, "set vars on " + self);
         reloadGroupMemberReadyCheckPages(self, notificationMessage);
-        sendSystemMessage(readyCheckPerformer, "Reloaded", "readyCheck");
         return SCRIPT_CONTINUE;
     }
     public static void reloadGroupMemberReadyCheckPages(obj_id groupId, String notificationMessage) throws InterruptedException
@@ -421,17 +416,16 @@ public class group_object extends script.base_script
         obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
         //notify the group members of the ready check response
         obj_id[] groupMembers = getGroupMemberIds(groupId);
-        sendSystemMessageTestingOnly(readyCheckPerformer, "group members: " + groupMembers.length);
         for (obj_id member : groupMembers) {
-            sendSystemMessage(member, notificationMessage, "readyCheck");
-            player_utility.reloadSnapshotPageIfOpen(member);
+            player_utility.sendPlayerSystemMessage(member, notificationMessage, "readyCheck");
+            player_utility.sendReloadSnapshotPageIfOpen(member);
         }
 
         //perform operations on the performer
         if (readyCheckPerformer == null) {
             return;
         }
-        player_utility.reloadStatusPageIfOpen(readyCheckPerformer);
+        player_utility.sendReloadStatusPageIfOpen(readyCheckPerformer);
     }
     //handler for messageTo for cleaning up the active ready check upon timeout
     public int cleanupReadyCheck(obj_id self, dictionary params) throws InterruptedException
@@ -459,10 +453,10 @@ public class group_object extends script.base_script
         String message = "Ready Check Results: " + yes.length + " Ready | " + no.length + " Not Ready | " + none.length + " No Response";
         obj_id[] memberPlayerIds = getGroupMemberPlayers(self);
         for (obj_id member : memberPlayerIds) {
-            sendSystemMessage(member, message, "readyCheck");
-            player_utility.closeReadyCheckSnapshotPage(member);
+            player_utility.sendPlayerSystemMessage(member, message, "readyCheck");
+            player_utility.sendCloseReadyCheckSnapshotPage(member);
         }
-        player_utility.closeReadyCheckStatusPage(readyCheckPerformer);
+        player_utility.sendCloseReadyCheckStatusPage(readyCheckPerformer);
         clearReadyCheckVars(self);
         return SCRIPT_CONTINUE;
     }
@@ -476,8 +470,14 @@ public class group_object extends script.base_script
             return SCRIPT_CONTINUE;
         }
 
+        var groupId = params.getObjId("group_id");
+        if (groupId == null)
+        {
+            return SCRIPT_CONTINUE;
+        }
+
         //check if the object id matches the performer of the ready check
-        obj_id readyCheckPerformer = utils.getObjIdScriptVar(self, "readyCheckPerformer");
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
         if (readyCheckPerformer == null)
         {
             //if no performer active, ready check is inactive
@@ -487,14 +487,14 @@ public class group_object extends script.base_script
         //cancel the ready check if the performer of the ready check leaves the group
         if (readyCheckPerformer == objIdLeftGroup)
         {
-            cancelReadyCheck(objIdLeftGroup);
+            cancelGroupReadyCheck(groupId, objIdLeftGroup);
             return SCRIPT_CONTINUE;
         }
 
         //a non-performer of the ready check has left the group, remove them from the response lists
-        obj_id[] noneIds = getReadyCheckNoneIds(self);
-        obj_id[] yesIds = getReadyCheckYesIds(self);
-        obj_id[] noIds = getReadyCheckNoIds(self);
+        obj_id[] noneIds = getReadyCheckNoneIds(groupId);
+        obj_id[] yesIds = getReadyCheckYesIds(groupId);
+        obj_id[] noIds = getReadyCheckNoIds(groupId);
 
         //ensure some ready check responses are present
         if (noneIds.length == 0 && yesIds.length == 0 && noIds.length == 0) {
@@ -513,7 +513,7 @@ public class group_object extends script.base_script
         reloadGroupMemberReadyCheckPages(self, notificationMessage);
         return SCRIPT_CONTINUE;
     }
-    public static void cancelReadyCheck(obj_id cancelPerformer) throws InterruptedException
+    public static void cancelCreatorsReadyCheck(obj_id cancelPerformer) throws InterruptedException
     {
         //get the group of cancelPerformer
         obj_id groupId = getGroupObject(cancelPerformer);
@@ -524,7 +524,7 @@ public class group_object extends script.base_script
         //ensure the ready check performer is performing the ready check cancellation
         obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
         if (readyCheckPerformer == null) {
-            sendSystemMessage(cancelPerformer, SID_READY_CHECK_RESPONSE_NO_CHECK);
+            player_utility.sendPlayerSystemMessage(cancelPerformer, SID_READY_CHECK_RESPONSE_NO_CHECK);
             return;
         }
 
@@ -533,6 +533,12 @@ public class group_object extends script.base_script
             return;
         }
 
+        cancelGroupReadyCheck(groupId, cancelPerformer);
+
+        player_utility.sendPlayerSystemMessage(cancelPerformer, SID_READY_CHECK_CANCELLED);
+    }
+    public static void cancelGroupReadyCheck(obj_id groupId, obj_id cancelPerformer) throws InterruptedException
+    {
         clearReadyCheckVars(groupId);
         obj_id[] groupMembers = getGroupMemberIds(groupId);
         var rescindParams = new dictionary();
@@ -542,6 +548,5 @@ public class group_object extends script.base_script
                 messageTo(member, "rescindReadyCheckRequest", rescindParams, 1.0f, false);
             }
         }
-        sendSystemMessage(cancelPerformer, SID_READY_CHECK_CANCELLED);
     }
 }
