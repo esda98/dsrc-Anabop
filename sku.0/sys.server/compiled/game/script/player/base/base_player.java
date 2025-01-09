@@ -1174,17 +1174,24 @@ public class base_player extends script.base_script
     }
     public int OnRemovedFromGroup(obj_id self, obj_id groupId) throws InterruptedException
     {
+        System.out.println("OnRemovedFromGroup - Start: " + self + ", " + groupId);
         if (utils.hasScriptVar(self, "currentHolo"))
         {
             performance.holographicCleanup(self);
         }
         if (utils.hasScriptVar(groupId, "readyCheckPerformer"))
         {
+            System.out.println("OnRemovedFromGroup - Has Ready Check Performer");
             //dispatch a message to the group to handle removal of the player obj_id from ready check
             dictionary leftParams = new dictionary();
             leftParams.put("obj_id", self);
             leftParams.put("group_id", groupId);
             messageTo(groupId, "leftGroupReadyCheck", leftParams, 1, false);
+            System.out.println("OnRemovedFromGroup - Sent Message to group");
+        }
+        else
+        {
+            System.out.println("OnRemovedFromGroup - No ready check performer");
         }
         detachScript(self, group.SCRIPT_GROUP_MEMBER);
         return SCRIPT_CONTINUE;
