@@ -398,18 +398,26 @@ public class group_object extends script.base_script
         {
             notificationMessage = getPlayerName(respondingId) + " is ready";
             newYes = collections.addElement(newYes, respondingId);
-            player_utility.sendPlayerSystemMessage(readyCheckPerformer, "Added to yes", "readyCheck");
         }
         else
         {
             notificationMessage = getPlayerName(respondingId) + " is not ready";
             newNo = collections.addElement(newNo, respondingId);
-            player_utility.sendPlayerSystemMessage(readyCheckPerformer, "Added to no", "readyCheck");
         }
 
         //save the scriptvar values
         setReadyCheckResponseVars(self, newNone, newYes, newNo);
         reloadGroupMemberReadyCheckPages(self, notificationMessage);
+
+        if (newNone.length == 0 && newNo.length == 0 && newYes.length > 0)
+        {
+            int activeCleanupId = utils.getIntScriptVar(self, "activeCleanupId");
+            dictionary cleanupParams = new dictionary();
+            cleanupParams.put("cleanup_id", activeCleanupId);
+            cleanupParams.put("all_yes", true);
+            messageTo(self, "cleanupReadyCheck", cleanupParams, 2, false);
+        }
+
         return SCRIPT_CONTINUE;
     }
     public static void reloadGroupMemberReadyCheckPages(obj_id groupId, String notificationMessage) throws InterruptedException
@@ -451,7 +459,19 @@ public class group_object extends script.base_script
         if (none.length == 0 && yes.length == 0 && no.length == 0) {
             return SCRIPT_CONTINUE;
         }
-        String message = "Ready Check Results: " + yes.length + " Ready | " + no.length + " Not Ready | " + none.length + " No Response";
+        String message = "Ready Check Results: ";
+        if (yes.length > 0 && no.length == 0 && none.length == 0)
+        {
+            message += "All (" + yes.length + "/" + yes.length + ") Members Are Ready";
+        }
+        else if (yes.length == 0 && none.length == 0 && no.length > 0)
+        {
+            message += "Nobody is Ready";
+        }
+        else
+        {
+            message += yes.length + " Ready | " + no.length + " Not Ready | " + none.length + " No Response";
+        }
         obj_id[] memberPlayerIds = getGroupMemberPlayers(self);
         for (obj_id member : memberPlayerIds) {
             player_utility.sendPlayerSystemMessage(member, message, "readyCheck");
