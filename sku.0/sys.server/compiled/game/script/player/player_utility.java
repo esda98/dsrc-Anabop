@@ -4191,30 +4191,6 @@ public class player_utility extends script.base_script
     //cancel handler
     public int rescindReadyCheckRequest(obj_id self, dictionary params) throws InterruptedException
     {
-        //get the performer of the ready check cancellation
-        obj_id performerId = params.getObjId("performer_id");
-        if (performerId == null)
-        {
-            return SCRIPT_CONTINUE;
-        }
-
-        //ensure the user is grouped when receiving a ready request
-        obj_id groupId = getGroupObject(self);
-        if (groupId == null) {
-            return SCRIPT_CONTINUE;
-        }
-
-        //ensure the performer of the active ready check has issued the cancellation request
-        obj_id groupReadyCheckPerformer = utils.getObjIdScriptVar(groupId, "readyCheckPerformer");
-        if (groupReadyCheckPerformer == null) {
-            return SCRIPT_CONTINUE;
-        }
-
-        //ensure the ready check performer is performing the cancellation
-        if (groupReadyCheckPerformer != performerId) {
-            return SCRIPT_CONTINUE;
-        }
-
         closeReadyCheckRequestPage(self);
         closeReadyCheckStatusPage(self);
         closeReadyCheckSnapshotPage(self);
