@@ -35,6 +35,16 @@ public class group_member extends script.base_script
         obj_id groupObject = getGroupObject(self);
         if (isIdValid(groupObject))
         {
+            if (utils.hasScriptVar(groupObject, group_object.VAR_READY_CHECK_PERFORMER))
+            {
+                System.out.println("group_member::OnAttach - Has Ready Check Performer");
+                //dispatch a message to the group to handle removal of the player obj_id from ready check
+                dictionary leftParams = new dictionary();
+                leftParams.put("obj_id", self);
+                leftParams.put("group_id", groupObject);
+                messageTo(groupObject, "addGroupReadyCheck", leftParams, 1, false);
+                System.out.println("group_member::OnAttach - Sent Message to group");
+            }
             dictionary groupObjectMessageData = new dictionary();
             groupObjectMessageData.put("memberObjectId", self);
             messageTo(groupObject, "addGroupMember", groupObjectMessageData, 0, false);
@@ -90,10 +100,6 @@ public class group_member extends script.base_script
                 leftParams.put("group_id", groupObject);
                 messageTo(groupObject, "leftGroupReadyCheck", leftParams, 1, false);
                 System.out.println("group_member::onDetach - Sent Message to group");
-            }
-            else
-            {
-                System.out.println("group_member::onDetach - No ready check performer");
             }
             if (utils.hasScriptVar(groupObject, combat.VAR_GROUP_VOLLEY_TARGET))
             {

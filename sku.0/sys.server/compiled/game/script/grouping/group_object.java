@@ -16,6 +16,7 @@ public class group_object extends script.base_script
     public static final string_id SID_READY_CHECK_DUPLICATE_NO = new string_id("spam", "ready_check_duplicate_no");
     public static final string_id SID_READY_CHECK_MUST_BE_LEADER = new string_id("spam", "ready_check_must_be_leader");
     public static final string_id SID_READY_CHECK_MUST_BE_GROUPED = new string_id("spam", "ready_check_must_be_grouped");
+    public static final string_id SID_READY_CHECK_JOINED = new string_id("spam", "ready_check_joined");
 
     public static final String VAR_READY_CHECK_PERFORMER = "readyCheckPerformer";
 
@@ -547,6 +548,55 @@ public class group_object extends script.base_script
         player_utility.sendCloseReadyCheckSnapshotPage(objIdLeftGroup);
         player_utility.sendCloseReadyCheckStatusPage(objIdLeftGroup);
         player_utility.sendCloseReadyCheckRequestPage(objIdLeftGroup);
+
+        return SCRIPT_CONTINUE;
+    }
+    //handler for when members join the group to ensure they are properly added to the ready check
+    public int addGroupReadyCheck(obj_id self, dictionary params) throws InterruptedException
+    {
+        System.out.println("addGroupReadyCheck - Start");
+        //extract the obj_id of the person who left the group
+        obj_id objIdAddGroup = params.getObjId("obj_id");
+        if (objIdAddGroup == null)
+        {
+            return SCRIPT_CONTINUE;
+        }
+        System.out.println("addGroupReadyCheck - Has add object id in params: " + objIdAddGroup);
+
+        var groupId = params.getObjId("group_id");
+        if (groupId == null)
+        {
+            return SCRIPT_CONTINUE;
+        }
+        System.out.println("addGroupReadyCheck - Has add group id in params: " + groupId);
+
+        //check if the object id matches the performer of the ready check
+        obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, VAR_READY_CHECK_PERFORMER);
+        if (readyCheckPerformer == null)
+        {
+            //if no performer active, ready check is inactive
+            return SCRIPT_CONTINUE;
+        }
+
+        //a non-performer of the ready check has left the group, remove them from the response lists
+        obj_id[] noneIds = getReadyCheckNoneIds(groupId);
+        obj_id[] yesIds = getReadyCheckYesIds(groupId);
+        obj_id[] noIds = getReadyCheckNoIds(groupId);
+
+        noneIds = collections.addElement(noneIds, objIdAddGroup);
+
+        String notificationMessage = getPlayerName(objIdAddGroup) + " has been added to the Ready Check";
+
+        //save the scriptvar values
+        setReadyCheckResponseVars(self, noneIds, yesIds, noIds);
+        reloadGroupMemberReadyCheckPages(self, notificationMessage);
+        System.out.println("addGroupReadyCheck - Completed");
+
+        //display the ready check prompt for the member joining
+        player_utility.sendPlayerSystemMessage(objIdAddGroup, SID_READY_CHECK_JOINED);
+        dictionary readyRequestParams = new dictionary();
+        readyRequestParams.put("performer_id", readyCheckPerformer);
+        messageTo(objIdAddGroup, "receiveReadyRequest", readyRequestParams, 1.0f, false);
 
         return SCRIPT_CONTINUE;
     }
