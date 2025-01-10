@@ -7217,4 +7217,95 @@ public class utils extends script.base_script
     public static boolean inDebugMode() throws InterruptedException {
         return (utils.getIntConfigSetting("GameServer", "debugMode") == 1);
     }
+    //generic helper for sending system messages to a player from anywhere
+    public static void sendPlayerSystemMessage(obj_id playerId, String message, String oob)
+    {
+        dictionary params = new dictionary();
+        params.put("message", message);
+        params.put("oob", oob);
+        messageTo(playerId, "receiveSendPlayerSystemMessage", params, 1, false);
+    }
+    //generic helper for sending system messages to a player from anywhere using string id's
+    public static void sendPlayerSystemMessage(obj_id playerId, string_id stringId)
+    {
+        dictionary params = new dictionary();
+        params.put("string_id", stringId);
+        messageTo(playerId, "receiveSendPlayerSystemMessage", params, 1, false);
+    }
+    public static void sendShowReadyCheckStatusPageMessage(obj_id playerId) throws InterruptedException
+    {
+        dictionary params = new dictionary();
+        params.put("player_id", playerId);
+        messageTo(playerId, "receiveShowReadyCheckStatusPage", params, 1, false);
+    }
+    public static void sendCloseReadyCheckStatusPage(obj_id playerId) throws InterruptedException
+    {
+        dictionary params = new dictionary();
+        params.put("player_id", playerId);
+        messageTo(playerId, "receiveCloseReadyCheckStatusPage", params, 1, false);
+    }
+    public static void sendReloadStatusPageIfOpen(obj_id playerId) throws InterruptedException
+    {
+        dictionary params = new dictionary();
+        params.put("player_id", playerId);
+        messageTo(playerId, "receiveReloadStatusPageIfOpen", params, 1, false);
+    }
+    public static void sendCloseReadyCheckRequestPage(obj_id playerId) throws InterruptedException
+    {
+        dictionary params = new dictionary();
+        params.put("player_id", playerId);
+        messageTo(playerId, "receiveCloseReadyCheckRequestPage", params, 1, false);
+    }
+    public static void sendCloseReadyCheckSnapshotPage(obj_id playerId) throws InterruptedException
+    {
+        dictionary params = new dictionary();
+        params.put("player_id", playerId);
+        messageTo(playerId, "receiveCloseReadyCheckSnapshotPage", params, 1, false);
+    }
+    public static void sendReloadSnapshotPageIfOpen(obj_id playerId) throws InterruptedException
+    {
+        dictionary params = new dictionary();
+        params.put("player_id", playerId);
+        messageTo(playerId, "receiveReloadSnapshotPageIfOpen", params, 1, false);
+    }
+    public static String[][] buildReadyCheckTable(obj_id[] none, obj_id[] yes, obj_id[] no) throws InterruptedException
+    {
+        //build the display table
+        String[][] memberPlayersReady = new String[none.length + yes.length + no.length][3];
+        int i = 0;
+        for (obj_id member : none)
+        {
+            memberPlayersReady[i][0] = getPlayerName(member);
+            memberPlayersReady[i][1] = "@ui_roadmap:" + skill.getProfessionName(getSkillTemplate(member));
+            memberPlayersReady[i][2] = "\\#ff913dNo Response";
+            i++;
+        }
+        for (obj_id member : yes)
+        {
+            memberPlayersReady[i][0] = getPlayerName(member);
+            memberPlayersReady[i][1] = "@ui_roadmap:" + skill.getProfessionName(getSkillTemplate(member));
+            memberPlayersReady[i][2] = "\\#3bcf00Ready";
+            i++;
+        }
+        for (obj_id member : no)
+        {
+            memberPlayersReady[i][0] = getPlayerName(member);
+            memberPlayersReady[i][1] = "@ui_roadmap:" + skill.getProfessionName(getSkillTemplate(member));
+            memberPlayersReady[i][2] = "\\#eb1d0eNot Ready";
+            i++;
+        }
+        return memberPlayersReady;
+    }
+    public static obj_id[] getGroupMemberPlayers(obj_id groupId)
+    {
+        obj_id[] groupMembers = getGroupMemberIds(groupId);
+        //determine the players in the group
+        ArrayList<obj_id> memberPlayerIds = new ArrayList<obj_id>();
+        for (obj_id member : groupMembers) {
+            if (isPlayer(member)) {
+                memberPlayerIds.add(member);
+            }
+        }
+        return memberPlayerIds.toArray(obj_id[]::new);
+    }
 }
