@@ -998,8 +998,9 @@ public class player_pvp extends script.base_script
             utils.setScriptVar(self, "battlefield.invitation.controller", controller);
             utils.setScriptVar(self, "battlefield.invitation.warpInLocation", loc);
             utils.setScriptVar(self, "battlefield.invitation.battlefieldName", battlefieldName);
+            utils.setScriptVar(self, "battlefield.invitation.factionToMatch", factionToMatch);
             play2dNonLoopingSound(self, "sound/ui_incoming_im.snd");
-            int pid = sui.msgbox(self, self, "Your battlefield is ready!  Do you wish to go to " + battlefieldName + "?", sui.YES_NO, "@spam:battlefield_invitation_accept_t", sui.MSG_QUESTION, "onBattlefieldInvitationAccept");
+            int pid = sui.msgbox(self, self, "Your battlefield is ready!  Do you wish to go to " + battlefieldName + "?", sui.YES_REVERT_NO, "@spam:battlefield_invitation_accept_t", sui.MSG_QUESTION, "onBattlefieldInvitationAccept");
             utils.setScriptVar(self, "battlefield.invitation.pid", pid);
             messageTo(self, "onBattlefieldInvitationExpire", params, 30.0f, false);
             return SCRIPT_CONTINUE;
@@ -1057,7 +1058,8 @@ public class player_pvp extends script.base_script
         params.put("name", getName(self));
         if (isIdValid(controller))
         {
-            if (btn == sui.BP_CANCEL)
+            String revert = params.getString(sui.MSGBOX_BTN_REVERT + ".RevertWasPressed");
+            if (btn == sui.BP_REVERT || (btn == sui.BP_OK && revert != null && !revert.isEmpty()))
             {
                 prose_package pp = new prose_package();
                 pp = prose.setStringId(pp, SID_BATTLEFIELD_QUEUE_REFUSAL);
@@ -1066,7 +1068,7 @@ public class player_pvp extends script.base_script
                 utils.removeScriptVarTree(self, "battlefield");
                 messageTo(controller, "refuseBattlefieldInvitation", params, 1.0f, false);
             }
-            else 
+            else if (btn == sui.BP_OK)
             {
                 prose_package pp = new prose_package();
                 pp = prose.setStringId(pp, SID_BATTLEFIELD_QUEUE_ACCEPTED);
@@ -1074,6 +1076,15 @@ public class player_pvp extends script.base_script
                 sendSystemMessageProse(self, pp);
                 messageTo(controller, "acceptBattlefieldInvitation", params, 1.0f, false);
                 utils.setScriptVar(self, "battlefield.invited", controller);
+            }
+            else
+            {
+                var resendInviteParams = new dictionary();
+                resendInviteParams.put("battlefieldController", controller);
+                resendInviteParams.put("battlefieldName", battlefieldName);
+                resendInviteParams.put("warpInLocation", utils.getLocationScriptVar(self, "battlefield.invitation.warpInLocation"));
+                resendInviteParams.put("factionToMatch", utils.getIntScriptVar(self, "battlefield.invitation.factionToMatch"));
+                messageTo(self, "receiveBattlefieldInvitation", params, 1.0f, false);
             }
         }
         return SCRIPT_CONTINUE;
