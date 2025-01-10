@@ -3933,7 +3933,21 @@ public class player_utility extends script.base_script
     //response method to SUI MessageBox asking if the group member is ready
     public int onReadyCheckRequestResponse(obj_id self, dictionary params) throws InterruptedException
     {
+        System.out.println("onReadyCheckRequestResponse - Start");
+
+        var keys = params.keySet().toArray();
+        for (int i = 0; i < keys.length; i++) {
+            System.out.println("Key " + keys[i] + " -> Value " + params.get(keys[i]));
+        }
+
+
+        var eventType = sui.getEventType(params);
+        System.out.println("received ready check event type: " + eventType);
+
         int btn = sui.getIntButtonPressed(params);
+
+        System.out.println("button pressed: " + params.getString(sui.PROP_BUTTONPRESSED));
+
 
         //ensure the user is grouped when performing response
         obj_id groupId = getGroupObject(self);
@@ -3948,15 +3962,23 @@ public class player_utility extends script.base_script
 
         dictionary responseParams = new dictionary();
         responseParams.put("responding_id", self);
-        if (btn == sui.BP_CANCEL)
+        String revert = params.getString(sui.MSGBOX_BTN_REVERT + ".RevertWasPressed");
+        System.out.println("revert: " + revert);
+        if (btn == sui.BP_REVERT || (btn == sui.BP_OK && revert != null && !revert.isEmpty()))
         {
             responseParams.put("ready", false);
             messageTo(groupId, "readyCheckResponse", responseParams, 1.0f, false);
         }
-        else
+        else if (btn == sui.BP_OK)
         {
             responseParams.put("ready", true);
             messageTo(groupId, "readyCheckResponse", responseParams, 1.0f, false);
+        }
+        else
+        {
+            dictionary readyRequestParams = new dictionary();
+            readyRequestParams.put("performer_id", readyCheckPerformer);
+            messageTo(self, "receiveReadyRequest", readyRequestParams, 1.0f, false);
         }
         return SCRIPT_CONTINUE;
     }
@@ -4200,7 +4222,13 @@ public class player_utility extends script.base_script
 
         //display the ready check request
         play2dNonLoopingSound(self, "sound/ui_incoming_im.snd");
-        int pid = sui.msgbox(self, self, "@spam:ready_check_request_prompt", sui.YES_NO, "@spam:ready_check_request_title", sui.MSG_QUESTION, "onReadyCheckRequestResponse");
+        int pid = sui.msgbox(self, self, "@spam:ready_check_request_prompt", sui.YES_REVERT_NO, "@spam:ready_check_request_title", sui.MSG_QUESTION, "onReadyCheckRequestResponse");
+//        subscribeToSUIEvent(pid, sui_event_type.SET_onButton, sui.MSGBOX_BTN_REVERT, "onReadyCheckRequestResponse");
+
+//        setSUIProperty(pid, sui.MSGBOX_BTN_REVERT, "OnPress", "RevertWasPressed=1\r\nparent.btnOk.press=t");
+//        subscribeToSUIProperty(pid, sui.MSGBOX_BTN_REVERT, "RevertWasPressed");
+
+//        subscribeToSUIEvent(pid, sui_event_type.SET_onButton, "previous_color", "handlePaletteUpdate");
         sui.setPid(self, pid, "readyCheck.request");
         return SCRIPT_CONTINUE;
     }

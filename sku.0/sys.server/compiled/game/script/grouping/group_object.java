@@ -477,6 +477,7 @@ public class group_object extends script.base_script
         for (obj_id member : memberPlayerIds) {
             player_utility.sendPlayerSystemMessage(member, message, "readyCheck");
             player_utility.sendCloseReadyCheckSnapshotPage(member);
+            player_utility.sendCloseReadyCheckRequestPage(member);
         }
         player_utility.sendCloseReadyCheckStatusPage(readyCheckPerformer);
         clearReadyCheckVars(self);

@@ -143,6 +143,7 @@ public class sui extends script.base_script
     public static final int BET_MAX_BET_ONE_SPIN = 15;
     public static final int REFRESH_LEAVE_GAME = 16;
     public static final int REMOVE_CANCEL = 17;
+    public static final int YES_REVERT_NO = 18;
     public static final int MSG_NORMAL = 0;
     public static final int MSG_CRITICAL = 1;
     public static final int MSG_EXCLAMATION = 2;
@@ -506,6 +507,12 @@ public class sui extends script.base_script
                 setSUIProperty(pid, BTN_CANCEL, PROP_TEXT, "@no");
                 setSUIProperty(pid, BTN_OK, PROP_TEXT, "@yes");
                 break;
+            case YES_REVERT_NO:
+                setSUIProperty(pid, BTN_REVERT, PROP_TEXT, "@no");
+                setSUIProperty(pid, BTN_CANCEL, PROP_TEXT, "@cancel");
+                setSUIProperty(pid, BTN_OK, PROP_TEXT, "@yes");
+                setSUIProperty(pid, BTN_CANCEL, "Visible", "False");
+                break;
             case RETRY_CANCEL:
                 hideBtnRevert(pid);
                 setSUIProperty(pid, BTN_CANCEL, PROP_TEXT, "@cancel");
@@ -628,6 +635,14 @@ public class sui extends script.base_script
                 setSUIProperty(pid, MSGBOX_BTN_REVERT, PROP_TEXT, "@abstain");
                 setSUIProperty(pid, MSGBOX_BTN_CANCEL, PROP_TEXT, "@no");
                 setSUIProperty(pid, MSGBOX_BTN_OK, PROP_TEXT, "@yes");
+                break;
+            case YES_REVERT_NO:
+                setSUIProperty(pid, MSGBOX_BTN_REVERT, PROP_TEXT, "@no");
+                setSUIProperty(pid, MSGBOX_BTN_CANCEL, PROP_TEXT, "@cancel");
+                setSUIProperty(pid, MSGBOX_BTN_OK, PROP_TEXT, "@yes");
+                setSUIProperty(pid, MSGBOX_BTN_CANCEL, "Visible", "False");
+                setSUIProperty(pid, sui.MSGBOX_BTN_REVERT, "OnPress", "RevertWasPressed=1\r\nparent.btnOk.press=t");
+                subscribeToSUIProperty(pid, sui.MSGBOX_BTN_REVERT, "RevertWasPressed");
                 break;
             case RETRY_CANCEL:
                 msgboxHideBtnLeft(pid);
