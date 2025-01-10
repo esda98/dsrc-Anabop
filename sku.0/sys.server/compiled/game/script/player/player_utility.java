@@ -4208,12 +4208,6 @@ public class player_utility extends script.base_script
         //display the ready check request
         play2dNonLoopingSound(self, "sound/ui_incoming_im.snd");
         int pid = sui.msgbox(self, self, "@spam:ready_check_request_prompt", sui.YES_REVERT_NO, "@spam:ready_check_request_title", sui.MSG_QUESTION, "onReadyCheckRequestResponse");
-//        subscribeToSUIEvent(pid, sui_event_type.SET_onButton, sui.MSGBOX_BTN_REVERT, "onReadyCheckRequestResponse");
-
-//        setSUIProperty(pid, sui.MSGBOX_BTN_REVERT, "OnPress", "RevertWasPressed=1\r\nparent.btnOk.press=t");
-//        subscribeToSUIProperty(pid, sui.MSGBOX_BTN_REVERT, "RevertWasPressed");
-
-//        subscribeToSUIEvent(pid, sui_event_type.SET_onButton, "previous_color", "handlePaletteUpdate");
         sui.setPid(self, pid, "readyCheck.request");
         return SCRIPT_CONTINUE;
     }
