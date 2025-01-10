@@ -486,21 +486,18 @@ public class group_object extends script.base_script
     //handler for when members leave the group to ensure they are properly removed from the ready check
     public int leftGroupReadyCheck(obj_id self, dictionary params) throws InterruptedException
     {
-        System.out.println("LeftGroupReadyCheck - Start");
         //extract the obj_id of the person who left the group
         obj_id objIdLeftGroup = params.getObjId("obj_id");
         if (objIdLeftGroup == null)
         {
             return SCRIPT_CONTINUE;
         }
-        System.out.println("LeftGroupReadyCheck - Has left object id in params: " + objIdLeftGroup);
 
         var groupId = params.getObjId("group_id");
         if (groupId == null)
         {
             return SCRIPT_CONTINUE;
         }
-        System.out.println("LeftGroupReadyCheck - Has left group id in params: " + groupId);
 
         //check if the object id matches the performer of the ready check
         obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, VAR_READY_CHECK_PERFORMER);
@@ -509,17 +506,14 @@ public class group_object extends script.base_script
             //if no performer active, ready check is inactive
             return SCRIPT_CONTINUE;
         }
-        System.out.println("LeftGroupReadyCheck - Has ready check performer on group: " + readyCheckPerformer);
 
         //cancel the ready check if the performer of the ready check leaves the group
         if (readyCheckPerformer == objIdLeftGroup)
         {
-            System.out.println("LeftGroupReadyCheck - Performer left group");
             cancelGroupReadyCheck(groupId, objIdLeftGroup);
             return SCRIPT_CONTINUE;
         }
 
-        System.out.println("LeftGroupReadyCheck - Non-Performer left group");
         //a non-performer of the ready check has left the group, remove them from the response lists
         obj_id[] noneIds = getReadyCheckNoneIds(groupId);
         obj_id[] yesIds = getReadyCheckYesIds(groupId);
@@ -527,23 +521,19 @@ public class group_object extends script.base_script
 
         //ensure some ready check responses are present
         if (noneIds.length == 0 && yesIds.length == 0 && noIds.length == 0) {
-            System.out.println("LeftGroupReadyCheck - Empty lists for removing member");
             return SCRIPT_CONTINUE;
         }
 
-        System.out.println("LeftGroupReadyCheck - Got lists for removing member");
         //make sure they are fully removed from any list they are contained in
         noneIds = collections.removeElement(noneIds, objIdLeftGroup);
         yesIds = collections.removeElement(yesIds, objIdLeftGroup);
         noIds = collections.removeElement(noIds, objIdLeftGroup);
-        System.out.println("LeftGroupReadyCheck - Removed member");
 
         String notificationMessage = getPlayerName(objIdLeftGroup) + " has been removed from the Ready Check";
 
         //save the scriptvar values
         setReadyCheckResponseVars(self, noneIds, yesIds, noIds);
         reloadGroupMemberReadyCheckPages(self, notificationMessage);
-        System.out.println("LeftGroupReadyCheck - Completed");
 
         //close the windows on the person leaving
         player_utility.sendCloseReadyCheckSnapshotPage(objIdLeftGroup);
@@ -555,21 +545,18 @@ public class group_object extends script.base_script
     //handler for when members join the group to ensure they are properly added to the ready check
     public int addGroupReadyCheck(obj_id self, dictionary params) throws InterruptedException
     {
-        System.out.println("addGroupReadyCheck - Start");
         //extract the obj_id of the person who left the group
         obj_id objIdAddGroup = params.getObjId("obj_id");
         if (objIdAddGroup == null)
         {
             return SCRIPT_CONTINUE;
         }
-        System.out.println("addGroupReadyCheck - Has add object id in params: " + objIdAddGroup);
 
         var groupId = params.getObjId("group_id");
         if (groupId == null)
         {
             return SCRIPT_CONTINUE;
         }
-        System.out.println("addGroupReadyCheck - Has add group id in params: " + groupId);
 
         //check if the object id matches the performer of the ready check
         obj_id readyCheckPerformer = utils.getObjIdScriptVar(groupId, VAR_READY_CHECK_PERFORMER);
@@ -591,7 +578,6 @@ public class group_object extends script.base_script
         //save the scriptvar values
         setReadyCheckResponseVars(self, noneIds, yesIds, noIds);
         reloadGroupMemberReadyCheckPages(self, notificationMessage);
-        System.out.println("addGroupReadyCheck - Completed");
 
         //display the ready check prompt for the member joining
         player_utility.sendPlayerSystemMessage(objIdAddGroup, SID_READY_CHECK_JOINED);

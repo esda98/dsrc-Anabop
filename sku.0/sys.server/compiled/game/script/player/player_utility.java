@@ -3933,21 +3933,7 @@ public class player_utility extends script.base_script
     //response method to SUI MessageBox asking if the group member is ready
     public int onReadyCheckRequestResponse(obj_id self, dictionary params) throws InterruptedException
     {
-        System.out.println("onReadyCheckRequestResponse - Start");
-
-        var keys = params.keySet().toArray();
-        for (int i = 0; i < keys.length; i++) {
-            System.out.println("Key " + keys[i] + " -> Value " + params.get(keys[i]));
-        }
-
-
-        var eventType = sui.getEventType(params);
-        System.out.println("received ready check event type: " + eventType);
-
         int btn = sui.getIntButtonPressed(params);
-
-        System.out.println("button pressed: " + params.getString(sui.PROP_BUTTONPRESSED));
-
 
         //ensure the user is grouped when performing response
         obj_id groupId = getGroupObject(self);
@@ -3963,7 +3949,6 @@ public class player_utility extends script.base_script
         dictionary responseParams = new dictionary();
         responseParams.put("responding_id", self);
         String revert = params.getString(sui.MSGBOX_BTN_REVERT + ".RevertWasPressed");
-        System.out.println("revert: " + revert);
         if (btn == sui.BP_REVERT || (btn == sui.BP_OK && revert != null && !revert.isEmpty()))
         {
             responseParams.put("ready", false);

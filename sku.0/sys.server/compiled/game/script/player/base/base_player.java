@@ -1174,7 +1174,6 @@ public class base_player extends script.base_script
     }
     public int OnRemovedFromGroup(obj_id self, obj_id groupId) throws InterruptedException
     {
-        System.out.println("OnRemovedFromGroup - Start: " + self + ", " + groupId);
         if (utils.hasScriptVar(self, "currentHolo"))
         {
             performance.holographicCleanup(self);
