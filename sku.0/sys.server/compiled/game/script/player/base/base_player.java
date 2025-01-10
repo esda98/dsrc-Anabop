@@ -1178,6 +1178,7 @@ public class base_player extends script.base_script
         {
             performance.holographicCleanup(self);
         }
+        squad_leader.clearRallyPoint(self);
         detachScript(self, group.SCRIPT_GROUP_MEMBER);
         return SCRIPT_CONTINUE;
     }
