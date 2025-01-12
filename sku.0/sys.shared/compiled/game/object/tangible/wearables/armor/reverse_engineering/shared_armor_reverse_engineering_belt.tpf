@@ -10,3 +10,4 @@ objectName = "wearables_name" "armor_reverse_engineering_belt"
 detailedDescription = "wearables_detail" "armor_reverse_engineering_belt"
 appearanceFilename = "appearance/armor_bounty_hunter_belt_f.sat"
 
+gameObjectType = GOT_armor
