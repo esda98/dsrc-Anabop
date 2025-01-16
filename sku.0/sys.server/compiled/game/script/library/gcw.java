@@ -1038,10 +1038,11 @@ public class gcw extends script.base_script
                         pvpModifyCurrentPvpKills(obj_id, 1);
                         incrementKillMeter(obj_id, 1);
                     }
-                    //clear killer player list
-                    setObjVar(player, VAR_PLAYER_KILLER_STATION_IDS, new int[0]);
+
                 }
             }
+            //clear killer player list
+            setObjVar(player, VAR_PLAYER_KILLER_STATION_IDS, new int[0]);
             Vector attackerList = utils.getResizeableStringBatchScriptVar(player, gcw.LIST_CREDIT_FOR_KILLS);
             if (attackerList == null || attackerList.size() == 0)
             {
@@ -1094,10 +1095,10 @@ public class gcw extends script.base_script
                         incrementKillMeter(killer, 1);
                     }
                 }
-                //clear killer player list
-                setObjVar(player, VAR_PLAYER_KILLER_STATION_IDS, new int[0]);
             }
         }
+        //clear killer player list
+        setObjVar(player, VAR_PLAYER_KILLER_STATION_IDS, new int[0]);
         utils.removeBatchScriptVar(player, gcw.LIST_CREDIT_FOR_KILLS);
         return true;
     }
@@ -1679,9 +1680,9 @@ public class gcw extends script.base_script
             {
                 pvpModifyCurrentPvpKills(((obj_id)validAttackers.get(k)), 1);
             }
-            //clear killer player list
-            setObjVar(defender, VAR_PLAYER_KILLER_STATION_IDS, new int[0]);
         }
+        //clear killer player list
+        setObjVar(defender, VAR_PLAYER_KILLER_STATION_IDS, new int[0]);
     }
     public static boolean validateSpaceTier(obj_id defender, obj_id attacker) throws InterruptedException
     {
