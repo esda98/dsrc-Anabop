@@ -3709,4 +3709,28 @@ public class player_utility extends script.base_script
         sendSystemMessage(self, "Setting the city's GCW defender region to " + localize(new string_id("gcw_regions", selectedGcwDefenderRegion)) + ". This may take a few seconds. You will receive mail confirmation once the change has been completed.", "");
         return SCRIPT_CONTINUE;
     }
+    public int receiveSendPlayerSystemMessage(obj_id self, dictionary params) throws InterruptedException
+    {
+        //try to do a localized text send
+        String message = params.getString("message");
+        if (message != null)
+        {
+            String oob = params.getString("oob");
+            if (oob == null)
+            {
+                return SCRIPT_CONTINUE;
+            }
+
+            sendSystemMessage(self, message, oob);
+        }
+        //check if a string id
+        string_id stringId = params.getStringId("string_id");
+        if (stringId == null)
+        {
+            return SCRIPT_CONTINUE;
+        }
+
+        sendSystemMessage(self, stringId);
+        return SCRIPT_CONTINUE;
+    }
 }

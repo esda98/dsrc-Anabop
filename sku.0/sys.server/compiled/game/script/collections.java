@@ -5,6 +5,7 @@
 
 package script;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +29,16 @@ public class collections
 			map.put(keys[i], values[i]);
 		}
 		return map;
+	}
+
+	public static int[] addIntElement(int[] array, int element) {
+		// Create a new array with one additional slot
+		int[] newArray = Arrays.copyOf(array, array.length + 1);
+
+		// Add the new element to the last position
+		newArray[array.length] = element;
+
+		return newArray;
 	}
 }
 

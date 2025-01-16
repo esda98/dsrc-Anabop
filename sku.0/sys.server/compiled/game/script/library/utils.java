@@ -7217,4 +7217,19 @@ public class utils extends script.base_script
     public static boolean inDebugMode() throws InterruptedException {
         return (utils.getIntConfigSetting("GameServer", "debugMode") == 1);
     }
+    //generic helper for sending system messages to a player from anywhere
+    public static void sendPlayerSystemMessage(obj_id playerId, String message, String oob)
+    {
+        dictionary params = new dictionary();
+        params.put("message", message);
+        params.put("oob", oob);
+        messageTo(playerId, "receiveSendPlayerSystemMessage", params, 1, false);
+    }
+    //generic helper for sending system messages to a player from anywhere using string id's
+    public static void sendPlayerSystemMessage(obj_id playerId, string_id stringId)
+    {
+        dictionary params = new dictionary();
+        params.put("string_id", stringId);
+        messageTo(playerId, "receiveSendPlayerSystemMessage", params, 1, false);
+    }
 }

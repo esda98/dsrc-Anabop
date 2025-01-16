@@ -254,6 +254,8 @@ public class gcw extends script.base_script
     public static final String GCW_TUTORIAL_FLAG = "gcw_tutorial_flag.has_received_tutorial";
     public static final String COLOR_REBELS = "\\" + colors_hex.COLOR_REBELS;
     public static final String COLOR_IMPERIALS = "\\" + colors_hex.COLOR_IMPERIALS;
+    public static final String VAR_PLAYER_KILLER_STATION_IDS = "gcw.player_killer_station_ids";
+    public static final string_id PVP_ACCOUNT_RECEIVED_CREDIT = new string_id("spam", "pvp_account_received_credit");
     public static void assignScanInterests(obj_id npc) throws InterruptedException
     {
         if (!isIdValid(npc) || isPlayer(npc) || pet_lib.isPet(npc))
@@ -1001,6 +1003,9 @@ public class gcw extends script.base_script
     }
     public static boolean releaseGcwPointCredit(obj_id player) throws InterruptedException
     {
+        //clear killer player list
+        setObjVar(player, VAR_PLAYER_KILLER_STATION_IDS, new int[0]);
+
         obj_id[] gcwEnemiesList = new obj_id[0];
         if (verifyPvpRegionStatus(player))
         {
@@ -1021,10 +1026,18 @@ public class gcw extends script.base_script
                 if (!isIdValid(obj_id) || !exists(obj_id) || !verifyPvpRegionStatus(obj_id)) {
                     continue;
                 }
+                //handle if the ratio between players is too large
                 if ((float) getLevel(player) / getLevel(obj_id) >= MIN_PVP_LEVEL_RATIO_LIMIT && ((isImperialPlayer && factions.isRebel(obj_id)) || (factions.isImperial(obj_id) && isRebelPlayer))) {
                     int points = distributeIndividualContribution(player, obj_id, 0, GCW_POINT_TYPE_GROUND_PVP);
-                    pvpModifyCurrentPvpKills(obj_id, 1);
-                    incrementKillMeter(obj_id, 1);
+                    if (points == -2)
+                    {
+                        utils.sendPlayerSystemMessage(obj_id, PVP_ACCOUNT_RECEIVED_CREDIT);
+                    }
+                    else
+                    {
+                        pvpModifyCurrentPvpKills(obj_id, 1);
+                        incrementKillMeter(obj_id, 1);
+                    }
                 }
             }
             Vector attackerList = utils.getResizeableStringBatchScriptVar(player, gcw.LIST_CREDIT_FOR_KILLS);
@@ -1069,8 +1082,15 @@ public class gcw extends script.base_script
             if (isOfLevel) {
                 int points = distributeIndividualContribution(player, ((String) o), totalDamage, GCW_POINT_TYPE_GROUND_PVP);
                 if (isIdValid(killer) && exists(killer)) {
-                    pvpModifyCurrentPvpKills(killer, 1);
-                    incrementKillMeter(killer, 1);
+                    if (points == -2)
+                    {
+                        utils.sendPlayerSystemMessage(killer, PVP_ACCOUNT_RECEIVED_CREDIT);
+                    }
+                    else
+                    {
+                        pvpModifyCurrentPvpKills(killer, 1);
+                        incrementKillMeter(killer, 1);
+                    }
                 }
             }
         }
@@ -1122,7 +1142,34 @@ public class gcw extends script.base_script
         boolean inRegion = verifyPvpRegionStatus(enemy);
         if (inRegion)
         {
+            //enemy is in a pvp region id
             finalReward += (int)(finalReward * 0.5f);
+            //track the station id of the player who killed is the killer of the victim
+            int enemyStationId = getPlayerStationId(enemy);
+            int[] victimKillerStationIds = getIntArrayObjVar(victim, VAR_PLAYER_KILLER_STATION_IDS);
+            if (victimKillerStationIds == null)
+            {
+                victimKillerStationIds = new int[0];
+            }
+            if (victimKillerStationIds.length > 0)
+            {
+                //killer player station ids already saved to victim
+                //check if this enemy station id is already present
+                for (int i = 0; i < victimKillerStationIds.length; i++)
+                {
+                    int victimKillerStationId = victimKillerStationIds[i];
+                    if (victimKillerStationId == enemyStationId)
+                    {
+                        //return a special negative code to the caller to indicate they have been not given
+                        //credit for the kill due to the presence of their account on another character
+                        return -2;
+                    }
+                }
+            }
+            //player is not in the list currently, add them to the list
+            victimKillerStationIds = collections.addIntElement(victimKillerStationIds, enemyStationId);
+            //set the updated list to the victim
+            setObjVar(victim, VAR_PLAYER_KILLER_STATION_IDS, victimKillerStationIds);
         }
         loot.rollRandomFactionalCollectible(victim, enemy, selfRank);
         obj_id relic = loot.chroniclesPvpLootDrop(enemy);
@@ -1593,6 +1640,8 @@ public class gcw extends script.base_script
     public static void grantSpacePvpKillCredit(obj_id defender, obj_id[] attackers) throws InterruptedException
     {
         Vector validAttackers = new Vector();
+        //clear killer player list
+        setObjVar(defender, VAR_PLAYER_KILLER_STATION_IDS, new int[0]);
         validAttackers.setSize(0);
         for (obj_id attacker : attackers) {
             if (factions.isImperial(defender)) {
@@ -1618,7 +1667,14 @@ public class gcw extends script.base_script
         {
             String packedAttacker = "" + ((obj_id)validAttackers.get(k)) + "-" + 1;
             int reward = distributeIndividualContribution(defender, packedAttacker, validAttackers.size(), GCW_POINT_TYPE_SPACE_PVP);
-            pvpModifyCurrentPvpKills(((obj_id)validAttackers.get(k)), 1);
+            if (reward == -2)
+            {
+                utils.sendPlayerSystemMessage(((obj_id)validAttackers.get(k)), PVP_ACCOUNT_RECEIVED_CREDIT);
+            }
+            else
+            {
+                pvpModifyCurrentPvpKills(((obj_id)validAttackers.get(k)), 1);
+            }
         }
     }
     public static boolean validateSpaceTier(obj_id defender, obj_id attacker) throws InterruptedException
