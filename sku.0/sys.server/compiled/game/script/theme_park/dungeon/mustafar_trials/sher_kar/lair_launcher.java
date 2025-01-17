@@ -13,6 +13,7 @@ public class lair_launcher extends script.base_script
     {
     }
     public static final string_id SID_SHER_KAR = new string_id("travel/zone_transition", "sher_kar_cave");
+    public static final string_id SID_SHER_KAR_HM = new string_id("travel/zone_transition", "sher_kar_hm_cave");
     public int OnObjectMenuRequest(obj_id self, obj_id player, menu_info item) throws InterruptedException
     {
         if (getDistance(player, self) > 25.0f)
@@ -20,6 +21,7 @@ public class lair_launcher extends script.base_script
             return SCRIPT_CONTINUE;
         }
         item.addRootMenu(menu_info_types.ITEM_USE, SID_SHER_KAR);
+        item.addRootMenu(menu_info_types.ITEM_USE_OTHER, SID_SHER_KAR_HM);
         return SCRIPT_CONTINUE;
     }
     public int OnObjectMenuSelect(obj_id self, obj_id player, int item) throws InterruptedException
@@ -29,6 +31,11 @@ public class lair_launcher extends script.base_script
             doBackflagging(player);
             instance.requestInstanceMovement(player, "sher_kar_cave");
         }
+        if (item == menu_info_types.ITEM_USE_OTHER)
+        {
+            doBackflagging(player);
+            instance.requestInstanceMovement(player, "sher_kar_hm_cave");
+        }
         return SCRIPT_CONTINUE;
     }
     public boolean doBackflagging(obj_id player) throws InterruptedException
@@ -36,6 +43,11 @@ public class lair_launcher extends script.base_script
         if (utils.playerHasItemByTemplateInInventoryOrEquipped(player, "object/tangible/item/som/sher_kar_syringe.iff"))
         {
             instance.flagPlayerForInstance(player, "sher_kar_cave");
+            return true;
+        }
+        if (utils.playerHasItemByTemplateInInventoryOrEquipped(player, "object/tangible/item/som/sher_kar_hm_syringe.iff"))
+        {
+            instance.flagPlayerForInstance(player, "sher_kar_hm_cave");
             return true;
         }
         return false;

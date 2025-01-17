@@ -1,0 +1,9 @@
+spawns	name	room	loc_x	loc_y	loc_z	yaw	script	mood	respawn_time	spawn_objvar	special_room	special_room_script	room_objvar	room_objvar_name	room_objvar_value
+s	s	s	f	f	f	f	s	s	i[600]	s	s	s	s	s	s
+object/tangible/ground_spawning/area_spawner.iff		r1	-103.559	-10.1731	-164.703	0				string:spawn_point=sher_kar_hm					
+object/tangible/ground_spawning/area_spawner.iff		r1	-70.6465	-19.9903	-117.995	0				string:spawn_point=praetorian_hm0					
+object/tangible/ground_spawning/area_spawner.iff		r1	-62.5067	-14.5092	-88.4646	0				string:spawn_point=praetorian_hm1					
+object/tangible/ground_spawning/area_spawner.iff		r1	-93.6714	-16.0989	-56.2622	0				string:spawn_point=karling_hm0					
+object/tangible/ground_spawning/area_spawner.iff		r1	-138.106	-12.0298	-29.9448	0				string:spawn_point=karling_hm1					
+object/tangible/ground_spawning/area_spawner.iff		r1	-174.187	-14.5113	-46.7251	0				string:spawn_point=symbiot_hm0					
+object/tangible/ground_spawning/area_spawner.iff		r1	-173.098	-14.7042	-88.5891	0				string:spawn_point=symbiot_hm1					

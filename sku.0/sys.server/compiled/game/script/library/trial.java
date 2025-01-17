@@ -164,6 +164,7 @@ public class trial extends script.base_script
     public static final String MONSTER_AREA = "r1";
     public static final String MONSTER_WP = "spawn_point";
     public static final String MONSTER_SHER_KAR = "sherKar.id";
+    public static final String MONSTER_SHER_KAR_HM_PHASE_1_GUARDS = "sherKar.phase1.guards";
     public static final String MONSTER_KARLING = "som_sherkar_karling";
     public static final String MONSTER_PRAETORIAN = "som_sherkar_praetorian";
     public static final String MONSTER_SYMBIOT = "som_sherkar_symbiot";
