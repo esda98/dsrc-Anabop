@@ -88,3 +88,15 @@ sher_kar_cave	-1400	-6000	-900	-5500	1																0		0		heavy
 sher_kar_cave	-700	-6000	-200	-5500	1																0		0		heavy
 sher_kar_cave	0	-6000	500	-5500	1																0		0		heavy
 sher_kar_cave	700	-6000	1200	-5500	1																0		0		heavy
+sher_kar_hm_cave	-7000	-7000	-6500	-6500	1																0		0		light
+sher_kar_hm_cave	-6300	-7000	-5800	-6500	1																0		0		medium
+sher_kar_hm_cave	-5600	-7000	-5100	-6500	1																0		0		medium
+sher_kar_hm_cave	-4900	-7000	-4400	-6500	1																0		0		medium
+sher_kar_hm_cave	-4200	-7000	-3700	-6500	1																0		0		medium
+sher_kar_hm_cave	-3500	-7000	-3000	-6500	1																0		0		medium
+sher_kar_hm_cave	-2800	-7000	-2300	-6500	1																0		0		heavy
+sher_kar_hm_cave	-2100	-7000	-1600	-6500	1																0		0		heavy
+sher_kar_hm_cave	-1400	-7000	-900	-6500	1																0		0		heavy
+sher_kar_hm_cave	-700	-7000	-200	-6500	1																0		0		heavy
+sher_kar_hm_cave	0	-7000	500	-6500	1																0		0		heavy
+sher_kar_hm_cave	700	-7000	1200	-6500	1																0		0		heavy
