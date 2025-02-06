@@ -31,6 +31,6 @@ manufactureScripts = ["systems.crafting.clothing.component.crafting_comp_power_b
 
 complexity = 21
 volume = 1
-sharedTemplate = "object/draft_schematic/armor/component/shared_armor_power_bit.iff"
+sharedTemplate = "object/draft_schematic/clothing/component/shared_clothing_power_bit.iff"
 xpPoints = [[type = XP_craftingClothingArmor, level = 0, value = 0]]
 
