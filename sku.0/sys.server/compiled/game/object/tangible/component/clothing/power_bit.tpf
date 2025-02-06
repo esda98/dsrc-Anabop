@@ -4,7 +4,6 @@
 
 @class object_template 11
 
-sharedTemplate = "object/tangible/component/armor/shared_power_bit.iff"
+sharedTemplate = "object/tangible/component/clothing/shared_power_bit.iff"
 
-
-scripts = +["systems.crafting.armor.component.crafting_armor_component_attribute"]
+scripts = +["systems.crafting.clothing.component.crafting_clothing_component_attribute"]

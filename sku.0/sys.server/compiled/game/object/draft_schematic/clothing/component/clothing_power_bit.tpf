@@ -4,7 +4,7 @@
 
 category = CT_armor
 itemsPerContainer = 0
-craftedObjectTemplate = "object/tangible/component/armor/power_bit.iff"
+craftedObjectTemplate = "object/tangible/component/clothing/power_bit.iff"
 slots = [
 	[
 	optional=false,
