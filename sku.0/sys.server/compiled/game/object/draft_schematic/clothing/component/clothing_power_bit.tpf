@@ -23,7 +23,7 @@ slots = [
 	complexity = 0,
 	appearance = "" ]]
 skillCommands = ["unskilled"]
-manufactureScripts = ["systems.crafting.armor.component.crafting_comp_power_bit"]
+manufactureScripts = ["systems.crafting.clothing.component.crafting_comp_power_bit"]
 
 @class intangible_object_template 1
 
