@@ -22,7 +22,15 @@ slots = [
 		[ingredientType=IT_resourceClass, ingredients = [[name="craft_clothing_ingredients_n" "binding_and_hardware", ingredient="hide", count=10]], complexity = 0, skillCommand = "unskilled"]],
 	optionalSkillCommand = "",
 	complexity = 0,
-	appearance = "" ]]
+	appearance = "" ],
+    [
+    optional=true,
+    name = "craft_clothing_ingredients_n" "power_bit",
+    options = [
+        [ingredientType=IT_template, ingredients = [[name="craft_clothing_ingredients_n" "power_bit", ingredient="object/tangible/component/clothing/power_bit.iff", count=1]], complexity = 0, skillCommand = "unskilled"]],
+    optionalSkillCommand = "",
+    complexity = 0,
+    appearance = "" ]]
 skillCommands = ["unskilled"]
 destroyIngredients = true
 manufactureScripts = [ "systems.crafting.clothing.skill.crafting_clothing_tailor_novice" ]
