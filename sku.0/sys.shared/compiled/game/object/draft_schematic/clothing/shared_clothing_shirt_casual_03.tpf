@@ -9,7 +9,7 @@ attributes = [
 
 slots = [
 	[name = "craft_clothing_ingredients_n" "body", hardpoint = ""],
-	[name = "craft_clothing_ingredients_n" "binding_and_hardware", hardpoint = ""]]
+	[name = "craft_clothing_ingredients_n" "binding_and_hardware", hardpoint = ""],
 	[name = "craft_clothing_ingredients_n" "power_bit", hardpoint = ""]]
 
 craftedSharedTemplate="object/tangible/wearables/shirt/shared_shirt_s03.iff"
