@@ -1969,5 +1969,5 @@ craftGcwToolsA	object/draft_schematic/item/gcw_spawner_tool.iff
 craftGcwToolsA	object/draft_schematic/item/gcw_tower_tool.iff
 craftGcwToolsA	object/draft_schematic/item/gcw_turret_tool.iff
 craftGcwToolsA	object/draft_schematic/item/gcw_vehicle_tool.iff
-craftClothingPowerBit	object/draft_schematic/clothing/component/clothing_power_bit.iff
+craftClothingNoviceGroupA	object/draft_schematic/clothing/component/clothing_power_bit.iff
 end	end
