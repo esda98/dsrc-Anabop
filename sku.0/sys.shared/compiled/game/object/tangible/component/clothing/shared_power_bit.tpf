@@ -6,4 +6,4 @@
 
 objectName = "craft_clothing_ingredients_n" "power_bit"
 detailedDescription = "craft_clothing_ingredients_d" "power_bit"
-appearanceFilename = "appearance/eqp_weapon_extra_bit.apt"
+appearanceFilename = "appearance/eqp_clothing_power_bit.apt"
