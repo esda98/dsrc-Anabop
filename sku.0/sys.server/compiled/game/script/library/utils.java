@@ -7299,11 +7299,19 @@ public class utils extends script.base_script
     public static obj_id[] getGroupMemberPlayers(obj_id groupId)
     {
         obj_id[] groupMembers = getGroupMemberIds(groupId);
+        //obj_id lead = getGroupLeaderId(groupId);
+        //sendPlayerSystemMessage(lead, "Members: " + groupMembers.length, "readyCheck");
         //determine the players in the group
         ArrayList<obj_id> memberPlayerIds = new ArrayList<obj_id>();
         for (obj_id member : groupMembers) {
-            if (isPlayer(member)) {
+            if (isPlayer(member))
+            {
+                //sendPlayerSystemMessage(lead, "Member is player: " + member, "readyCheck");
                 memberPlayerIds.add(member);
+            }
+            else
+            {
+                //sendPlayerSystemMessage(lead, "Member isn't player: " + member, "readyCheck");
             }
         }
         return memberPlayerIds.toArray(obj_id[]::new);
