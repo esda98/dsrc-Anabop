@@ -872,7 +872,7 @@ public class droid_deed extends script.base_script
         }
         return petControlDevice;
     }
-    public void initDroidCraftedInventoryPCD(obj_id petControlDevice, obj_id player) throws InterruptedException
+    public static void initDroidCraftedInventoryPCD(obj_id petControlDevice, obj_id player) throws InterruptedException
     {
         if (hasObjVar(petControlDevice, "ai.pet.hasContainer"))
         {
