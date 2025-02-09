@@ -15,6 +15,12 @@ public class hand_sampling_droid extends script.systems.missions.base.mission_dy
     }
     public int OnAttach(obj_id self) throws InterruptedException
     {
+        setInvulnerable(self, true);
+        return SCRIPT_CONTINUE;
+    }
+    public int destroySelf(obj_id self, dictionary params) throws InterruptedException
+    {
+        destroyObject(self);
         return SCRIPT_CONTINUE;
     }
     public int OnObjectMenuRequest(obj_id self, obj_id player, menu_info mi) throws InterruptedException

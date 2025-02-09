@@ -1,0 +1,27 @@
+//            Filename:     Hand Sampling Droid
+//            Directory:    object/creature/npc/droid
+//
+//            Description:
+//            A Droid which can handsample resources on the owner's behalf
+//
+//            Notes:
+//
+//
+//            Category:                   Creature
+//            Sub-Category:               NPC
+//            Classification:             Droid
+//
+
+@base object/creature/npc/base/base_droid.iff
+
+@class creature_object_template 1
+
+@class tangible_object_template 0
+
+@class object_template 0
+
+sharedTemplate = "object/creature/npc/droid/crafted/shared_hand_sampling_droid.iff"
+
+scripts = [ "systems.resource_harvesting.hand_sampling_droid" ]
+
+objvars = +[	"ai.creatureName" = "hand_sampling_droid" ]
