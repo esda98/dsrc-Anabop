@@ -14047,6 +14047,24 @@ public class base_class
         return _getResourceEfficiency(getLongWithNull(resourceType), where);
     }
     /**
+     * Get the time since depletion of a resource type
+     * @param resourceType The object id of the resource type
+     */
+    private static native long _getResourceTimeSinceDepletion(long resourceType);
+    public static long        getResourceTimeSinceDepletion(obj_id resourceType)
+    {
+        return _getResourceTimeSinceDepletion(getLongWithNull(resourceType));
+    }
+    /**
+     * timestamp for depletion, -1 if not depleted, -2 in error cases
+     * @param resourceType The object id of the resource type
+     */
+    private static native long _getResourceDepletedTimestamp(long resourceType);
+    public static long        getResourceDepletedTimestamp(obj_id resourceType)
+    {
+        return _getResourceDepletedTimestamp(getLongWithNull(resourceType));
+    }
+    /**
      * Return true if the resource type is derived from the specified class
      * @param resourceType The object id of the resource type
      * @param parentResourceClass The name of the parent class

@@ -1,11 +1,12 @@
 package script.systems.resource_harvesting;
 import script.*;
-import script.library.bounty_hunter;
-import script.library.groundquests;
-import script.library.regions;
-import script.library.utils;
+import script.library.*;
+import script.player.player_hand_sampling_droid;
+import script.player.player_utility;
+
 public class hand_sampling_droid extends script.systems.missions.base.mission_dynamic_base
 {
+
     private static string_id STR_NOT_TRADER = new string_id("spam", "hs_droid_not_trader");
     private static string_id STR_HS_DROID_ACTIVATE = new string_id("spam", "hs_droid_activate");
     private static string_id STR_HS_DROID_NO_SURVEY = new string_id("spam", "hs_droid_no_survey");
@@ -33,8 +34,8 @@ public class hand_sampling_droid extends script.systems.missions.base.mission_dy
             return SCRIPT_CONTINUE;
         }
         //ensure the player has a surveyed resource already
-        location sampleLoc = getSampleLocation(player);
-        if (sampleLoc != null && getSampleResourceType(player) != null)
+        location sampleLoc = player_utility.getPlayerSampleLoc(player);
+        if (sampleLoc != null && player_utility.getPlayerSampleResource(player) != null)
         {
             //ensure the player is nearby their sample location
             if (getDistance(player, sampleLoc) < 100)
@@ -66,10 +67,10 @@ public class hand_sampling_droid extends script.systems.missions.base.mission_dy
         if (item == menu_info_types.SERVER_PROBE_DROID_ACTIVATE)
         {
             //ensure the player has a surveyed resource already
-            location sampleLoc = getSampleLocation(player);
-            if (sampleLoc != null && getSampleResourceType(player) != null)
+            location sampleLoc = player_utility.getPlayerSampleLoc(player);
+            if (sampleLoc != null && player_utility.getPlayerSampleResource(player) != null)
             {
-                beginSampling(self, player);
+                player_hand_sampling_droid.beginHandSampleDroidLoop(self, player);
             }
             else
             {
@@ -78,20 +79,4 @@ public class hand_sampling_droid extends script.systems.missions.base.mission_dy
         }
         return SCRIPT_CONTINUE;
     }
-    private location getSampleLocation(obj_id playerId)
-    {
-        return getLocationObjVar(playerId, "surveying.sampleLocation");
-    }
-    private String getSampleResourceType(obj_id playerId) throws InterruptedException
-    {
-        return utils.getStringScriptVar(playerId, "surveying.resource");
-    }
-    private void beginSampling(obj_id self, obj_id player) throws InterruptedException
-    {
-        location sampleLoc = getSampleLocation(player);
-        String sampleResType = getSampleResourceType(player);
-        sendSystemMessage(player, "Would sample " + sampleResType + " now.", "hs_droid");
-    }
-//    location sampleLocation = getLocationObjVar(player, "surveying.sampleLocation");
-//    String resource_type = utils.getStringScriptVar(player, "surveying.resource");
 }

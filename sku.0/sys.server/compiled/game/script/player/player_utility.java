@@ -3709,4 +3709,12 @@ public class player_utility extends script.base_script
         sendSystemMessage(self, "Setting the city's GCW defender region to " + localize(new string_id("gcw_regions", selectedGcwDefenderRegion)) + ". This may take a few seconds. You will receive mail confirmation once the change has been completed.", "");
         return SCRIPT_CONTINUE;
     }
+    public static location getPlayerSampleLoc(obj_id playerId)
+    {
+        return getLocationObjVar(playerId, "surveying.sampleLocation");
+    }
+    public static String getPlayerSampleResource(obj_id playerId) throws InterruptedException
+    {
+        return utils.getStringScriptVar(playerId, "surveying.resource");
+    }
 }
